@@ -1,5 +1,6 @@
 {
-  "license": "NSL-KDD dataset. Cite: M. Tavallaee, E. Bagheri, W. Lu, A. Ghorbani, 'A Detailed Analysis of the KDD CUP 99 Data Set,' 2nd IEEE Symposium on Computational Intelligence for Security and Defense Applications (CISDA), 2009. Original terms (unb.ca/cic/datasets/nsl.html) permit redistribution and mirroring in any form with this citation retained.",
+  "license": "NSL-KDD dataset. Cite: M. Tavallaee, E. Bagheri, W. Lu, A. Ghorbani, 'A Detailed Analysis of the KDD CUP 99 Data Set,' 2nd IEEE Symposium on Computational Intelligence for Security and Defense Applications (CISDA), 2009. Original terms (unb.ca/cic/datasets/nsl.html) permit redistribution and mirroring in any form with this citation retained. Mirror: https://github.com/defcom17/NSL_KDD",
+  "note": "mean/std/benignMean are in TRANSFORMED space (see feature-schema.json's transform field); apply that transform to a raw value before standardizing with these.",
   "featureOrder": [
     "duration",
     "src_bytes",
@@ -15,9 +16,9 @@
     "is_priv_port"
   ],
   "mean": [
-    477.04,
-    31337.2875,
-    7873.8445,
+    0.619,
+    3.6511,
+    3.4455,
     63.9665,
     22.802,
     0.1981,
@@ -29,9 +30,9 @@
     0.8125
   ],
   "std": [
-    3204.4827,
-    571426.2587,
-    164312.491,
+    1.9278,
+    3.0135,
+    3.6906,
     105.8323,
     61.3236,
     0.3933,
@@ -43,9 +44,9 @@
     0.3903
   ],
   "benignMean": [
-    280.1,
-    30704.555,
-    4762.7,
+    0.5249,
+    5.1816,
+    5.5592,
     23.157,
     28.083,
     0.0146,

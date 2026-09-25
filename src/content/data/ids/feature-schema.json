@@ -1,5 +1,5 @@
 {
-  "license": "NSL-KDD dataset. Cite: M. Tavallaee, E. Bagheri, W. Lu, A. Ghorbani, 'A Detailed Analysis of the KDD CUP 99 Data Set,' 2nd IEEE Symposium on Computational Intelligence for Security and Defense Applications (CISDA), 2009. Original terms (unb.ca/cic/datasets/nsl.html) permit redistribution and mirroring in any form with this citation retained.",
+  "license": "NSL-KDD dataset. Cite: M. Tavallaee, E. Bagheri, W. Lu, A. Ghorbani, 'A Detailed Analysis of the KDD CUP 99 Data Set,' 2nd IEEE Symposium on Computational Intelligence for Security and Defense Applications (CISDA), 2009. Original terms (unb.ca/cic/datasets/nsl.html) permit redistribution and mirroring in any form with this citation retained. Mirror: https://github.com/defcom17/NSL_KDD",
   "features": [
     {
       "key": "duration",
@@ -8,8 +8,7 @@
       "description": "Length of the connection.",
       "min": 0.0,
       "max": 8172.0,
-      "locked": false,
-      "lockedReason": null
+      "transform": "log1p"
     },
     {
       "key": "src_bytes",
@@ -18,8 +17,7 @@
       "description": "Bytes sent from source to destination.",
       "min": 0.0,
       "max": 54540.0,
-      "locked": false,
-      "lockedReason": null
+      "transform": "log1p"
     },
     {
       "key": "dst_bytes",
@@ -28,8 +26,7 @@
       "description": "Bytes sent back from destination to source.",
       "min": 0.0,
       "max": 25598.16,
-      "locked": false,
-      "lockedReason": null
+      "transform": "log1p"
     },
     {
       "key": "count",
@@ -38,8 +35,7 @@
       "description": "Connections to the same destination host in the last 2 seconds.",
       "min": 1.0,
       "max": 511.0,
-      "locked": false,
-      "lockedReason": null
+      "transform": "none"
     },
     {
       "key": "srv_count",
@@ -48,8 +44,7 @@
       "description": "Connections to the same destination service in the last 2 seconds.",
       "min": 1.0,
       "max": 510.0,
-      "locked": false,
-      "lockedReason": null
+      "transform": "none"
     },
     {
       "key": "serror_rate",
@@ -58,8 +53,7 @@
       "description": "Fraction of recent connections to this host that were half-open (SYN error).",
       "min": 0.0,
       "max": 1.0,
-      "locked": false,
-      "lockedReason": null
+      "transform": "none"
     },
     {
       "key": "same_srv_rate",
@@ -68,8 +62,7 @@
       "description": "Fraction of recent connections to this host using the same service.",
       "min": 0.0,
       "max": 1.0,
-      "locked": false,
-      "lockedReason": null
+      "transform": "none"
     },
     {
       "key": "dst_host_count",
@@ -78,8 +71,7 @@
       "description": "Connections to this destination host over a longer historical window.",
       "min": 1.0,
       "max": 255.0,
-      "locked": false,
-      "lockedReason": null
+      "transform": "none"
     },
     {
       "key": "dst_host_srv_count",
@@ -88,8 +80,7 @@
       "description": "Connections to this destination host and service over that same window.",
       "min": 1.0,
       "max": 255.0,
-      "locked": false,
-      "lockedReason": null
+      "transform": "none"
     },
     {
       "key": "flag_is_error",
@@ -98,8 +89,7 @@
       "description": "Whether the connection ended in an error or incomplete state instead of closing cleanly.",
       "min": 0.0,
       "max": 1.0,
-      "locked": true,
-      "lockedReason": "This falls out of the attack mechanism itself, for example a half-open scan produces it by construction. Changing it usually means abandoning the technique, not evading it."
+      "transform": "none"
     },
     {
       "key": "logged_in",
@@ -108,8 +98,7 @@
       "description": "Whether the connection successfully authenticated.",
       "min": 0.0,
       "max": 1.0,
-      "locked": true,
-      "lockedReason": "Faking a successful login means actually compromising valid credentials, which is a separate problem from anything else in this flow record."
+      "transform": "none"
     },
     {
       "key": "is_priv_port",
@@ -118,8 +107,7 @@
       "description": "Whether the destination is a recognized, well-known service rather than an unclassified high port.",
       "min": 0.0,
       "max": 1.0,
-      "locked": true,
-      "lockedReason": "This identifies which service is being targeted. Changing it means attacking a different service, not evading detection on this one."
+      "transform": "none"
     }
   ]
 }

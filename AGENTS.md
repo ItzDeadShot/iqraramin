@@ -74,26 +74,43 @@ Lighthouse 90+, content from `src/content/data/`, no em-dashes, no runtime
 network requests, unit tests (Vitest) for all math.
 
 Build order and status:
-1. **Shared dataset pipeline** - done. `scripts/prepare_ids_dataset.py`
-   (Python, pandas+numpy, offline only) downloads NSL-KDD, derives 12
-   interpretable features (9 adjustable, 3 locked with a stated reason),
-   builds a 2,000-row balanced+category-stratified training pool, an
-   800-row held-out test set genuinely from KDDTest+ (which NSL-KDD
-   deliberately salts with attack variants absent from training, so a
-   linear model plateaus around 78-82% there by design, not by bug), 8
-   client partitions (IID and non-IID-by-attack-category), a hand-written
-   (gradient descent, no sklearn) logistic regression's weights, and 4
-   preselected confidently-flagged malicious samples for Piece 2. Outputs
-   committed under `src/content/data/ids/` (raw NSL-KDD files are not
-   committed, only the generated JSON, all under ~150KB each). Re-run with
-   `python3 scripts/prepare_ids_dataset.py` (needs `pip install -r
+1. **Shared dataset pipeline** - done, revised after first review.
+   `scripts/prepare_ids_dataset.py` (Python, pandas+numpy, offline only)
+   downloads NSL-KDD (mirror URL + SHA-256 pinned in `MIRROR_FILES`, fails
+   loudly on a hash mismatch), derives 12 interpretable features (duration
+   and both byte counts are log1p-transformed before standardizing, see
+   `transform` in feature-schema.json; nothing is globally locked anymore).
+   Builds a 2,000-row balanced+category-stratified training pool, a
+   genuinely held-out 600-row test set from KDDTest+ (300 benign / 300
+   malicious, scaler fit on the training pool only; KDDTest+ deliberately
+   includes attack variants absent from training, so a linear model
+   plateaus around 78-82% there by design, not by bug, currently 80.2%).
+   8 client partitions: IID, and non-IID-by-attack-category where every
+   client keeps the same 125 benign rows as the IID split plus a capped 50
+   malicious rows from its dominant category (71.4% benign on every
+   client, uniformly). A hand-written (gradient descent, no sklearn)
+   logistic regression's weights, and 4 preselected sample flows for
+   Piece 2 spanning a difficulty range (0.76-0.998 confidence, one
+   guaranteed >=0.9 anchor, confirmed distinct rows, no duplicated u2r
+   sampling). Locks for Piece 2's sliders are now per-sample and
+   attack-aware (`featureNotes` in samples.json): structural locks
+   (`logged_in`, `is_priv_port`) always apply; category-specific locks add
+   more (e.g. dos also locks `serror_rate`/`flag_is_error`, since a SYN
+   flood's own error rate is what defines it); every unlocked feature
+   carries a short "cost to the attacker" note.
+   Outputs committed under `src/content/data/ids/` (raw NSL-KDD files are
+   not committed, only the generated JSON, all under ~150KB each). Re-run
+   with `python3 scripts/prepare_ids_dataset.py` (needs `pip install -r
    scripts/requirements.txt`); it's deterministic (seed 42).
    **License**: NSL-KDD, cite Tavallaee/Bagheri/Lu/Ghorbani, CISDA 2009;
    official host (unb.ca/cic/datasets/nsl.html) is currently down but its
    stated terms permit redistribution/mirroring with that citation, which
-   is what the script's mirror source relies on. The citation string is
-   embedded in every generated JSON file's `license` field; surface it
-   wherever Piece 1/2 data is shown on the site.
+   is what the script's pinned mirror relies on. The citation string is
+   embedded in every generated JSON file's `license` field; still need to
+   surface it visibly wherever Piece 1/2 data is shown on the site.
+   **Still open**: once Piece 1's TS federated training exists, add a
+   Vitest parity test confirming centralized TS training reaches accuracy
+   within a few points of this Python model on the same data and seed.
 2. Piece 2, "Evade my detector" (Research) - next up.
 3. Piece 1, federated poisoning sandbox (Home hero).
 4. Piece 3, packet dissector bio (About).

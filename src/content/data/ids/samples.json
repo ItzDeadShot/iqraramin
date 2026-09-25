@@ -1,5 +1,5 @@
 {
-  "license": "NSL-KDD dataset. Cite: M. Tavallaee, E. Bagheri, W. Lu, A. Ghorbani, 'A Detailed Analysis of the KDD CUP 99 Data Set,' 2nd IEEE Symposium on Computational Intelligence for Security and Defense Applications (CISDA), 2009. Original terms (unb.ca/cic/datasets/nsl.html) permit redistribution and mirroring in any form with this citation retained.",
+  "license": "NSL-KDD dataset. Cite: M. Tavallaee, E. Bagheri, W. Lu, A. Ghorbani, 'A Detailed Analysis of the KDD CUP 99 Data Set,' 2nd IEEE Symposium on Computational Intelligence for Security and Defense Applications (CISDA), 2009. Original terms (unb.ca/cic/datasets/nsl.html) permit redistribution and mirroring in any form with this citation retained. Mirror: https://github.com/defcom17/NSL_KDD",
   "samples": [
     {
       "attackType": "neptune",
@@ -8,17 +8,67 @@
         "duration": 0.0,
         "src_bytes": 0.0,
         "dst_bytes": 0.0,
-        "count": 246.0,
-        "srv_count": 18.0,
-        "serror_rate": 0.0,
-        "same_srv_rate": 0.07,
-        "dst_host_count": 218.0,
-        "dst_host_srv_count": 18.0,
+        "count": 294.0,
+        "srv_count": 16.0,
+        "serror_rate": 1.0,
+        "same_srv_rate": 0.05,
+        "dst_host_count": 255.0,
+        "dst_host_srv_count": 16.0,
         "flag_is_error": 1.0,
         "logged_in": 0.0,
         "is_priv_port": 0.0
       },
-      "modelProbability": 0.9877
+      "modelProbability": 0.998,
+      "featureNotes": {
+        "duration": {
+          "locked": false,
+          "cost": "Shorter connections finish faster and move less traffic per attempt."
+        },
+        "src_bytes": {
+          "locked": false,
+          "cost": "Smaller packets reduce bandwidth footprint but need more connections for the same effect."
+        },
+        "dst_bytes": {
+          "locked": false,
+          "cost": "A real SYN flood rarely gets a response anyway; this is already close to zero."
+        },
+        "count": {
+          "locked": false,
+          "cost": "Fewer connections per window looks less like a flood, but is a weaker attack."
+        },
+        "srv_count": {
+          "locked": false,
+          "cost": "Same tradeoff as connection count, scoped to one service."
+        },
+        "serror_rate": {
+          "locked": true,
+          "reason": "Same signature: this rate sitting near 1.0 is what makes it a SYN flood in the first place."
+        },
+        "same_srv_rate": {
+          "locked": false,
+          "cost": "Spreading across services looks less targeted, but dilutes the flood."
+        },
+        "dst_host_count": {
+          "locked": false,
+          "cost": "Fewer hosts touched per window reduces blast radius and visibility."
+        },
+        "dst_host_srv_count": {
+          "locked": false,
+          "cost": "Same tradeoff, scoped to host and service together."
+        },
+        "flag_is_error": {
+          "locked": true,
+          "reason": "A SYN flood's whole mechanism is half-open connections; turning this off means it stops being this attack."
+        },
+        "logged_in": {
+          "locked": true,
+          "reason": "Faking a successful login means actually compromising valid credentials, a separate problem from anything else in this flow record."
+        },
+        "is_priv_port": {
+          "locked": true,
+          "reason": "This identifies which service is being targeted. Changing it means attacking a different service, not evading detection on this one."
+        }
+      }
     },
     {
       "attackType": "satan",
@@ -37,26 +87,126 @@
         "logged_in": 0.0,
         "is_priv_port": 0.0
       },
-      "modelProbability": 0.8648
+      "modelProbability": 0.8973,
+      "featureNotes": {
+        "duration": {
+          "locked": false,
+          "cost": "Longer pauses between probes look more like normal traffic, but the scan takes longer."
+        },
+        "src_bytes": {
+          "locked": false,
+          "cost": "Probe packets are already minimal; there is little room to change this."
+        },
+        "dst_bytes": {
+          "locked": false,
+          "cost": "Mostly set by what the target sends back, outside the attacker's control."
+        },
+        "count": {
+          "locked": false,
+          "cost": "Fewer connections per window means a slower scan; it takes longer to map the target."
+        },
+        "srv_count": {
+          "locked": false,
+          "cost": "Same tradeoff, scoped to one service."
+        },
+        "serror_rate": {
+          "locked": false,
+          "cost": "Drops naturally as scan speed drops, or by switching from a SYN scan to a full-connect scan: noisier per probe, but statistically quieter here."
+        },
+        "same_srv_rate": {
+          "locked": false,
+          "cost": "Spreading probes across services looks broader, less like targeting one thing."
+        },
+        "dst_host_count": {
+          "locked": false,
+          "cost": "Fewer hosts probed per window is a slower, quieter sweep."
+        },
+        "dst_host_srv_count": {
+          "locked": false,
+          "cost": "Same tradeoff, scoped to host and service together."
+        },
+        "flag_is_error": {
+          "locked": false,
+          "cost": "Looking like completed connections instead of half-open ones means switching scan technique entirely."
+        },
+        "logged_in": {
+          "locked": true,
+          "reason": "Faking a successful login means actually compromising valid credentials, a separate problem from anything else in this flow record."
+        },
+        "is_priv_port": {
+          "locked": true,
+          "reason": "This identifies which service is being targeted. Changing it means attacking a different service, not evading detection on this one."
+        }
+      }
     },
     {
-      "attackType": "guess_passwd",
+      "attackType": "warezmaster",
       "category": "r2l",
       "features": {
         "duration": 0.0,
-        "src_bytes": 26.0,
-        "dst_bytes": 157.0,
-        "count": 1.0,
-        "srv_count": 1.0,
+        "src_bytes": 12.0,
+        "dst_bytes": 0.0,
+        "count": 2.0,
+        "srv_count": 2.0,
         "serror_rate": 0.0,
         "same_srv_rate": 1.0,
-        "dst_host_count": 59.0,
-        "dst_host_srv_count": 31.0,
+        "dst_host_count": 4.0,
+        "dst_host_srv_count": 34.0,
         "flag_is_error": 0.0,
         "logged_in": 0.0,
         "is_priv_port": 1.0
       },
-      "modelProbability": 0.6629
+      "modelProbability": 0.7733,
+      "featureNotes": {
+        "duration": {
+          "locked": false,
+          "cost": "A slower attempt blends in with a legitimate slow connection."
+        },
+        "src_bytes": {
+          "locked": false,
+          "cost": "Login payloads are already small; little room to change this without breaking the protocol."
+        },
+        "dst_bytes": {
+          "locked": false,
+          "cost": "Mostly set by the server's response, outside the attacker's control."
+        },
+        "count": {
+          "locked": false,
+          "cost": "Fewer attempts per window looks less like guessing, but is slower to succeed."
+        },
+        "srv_count": {
+          "locked": false,
+          "cost": "Same tradeoff, scoped to this service."
+        },
+        "serror_rate": {
+          "locked": false,
+          "cost": "Already low since this attack completes a normal handshake; little to change here."
+        },
+        "same_srv_rate": {
+          "locked": false,
+          "cost": "Repeated attempts naturally concentrate on one service."
+        },
+        "dst_host_count": {
+          "locked": false,
+          "cost": "Fewer hosts targeted per window is quieter, but narrower."
+        },
+        "dst_host_srv_count": {
+          "locked": false,
+          "cost": "Same tradeoff, scoped to host and service together."
+        },
+        "flag_is_error": {
+          "locked": false,
+          "cost": "This attack already completes a clean connection; there is nothing to hide here."
+        },
+        "logged_in": {
+          "locked": true,
+          "reason": "Faking a successful login means actually compromising valid credentials, a separate problem from anything else in this flow record."
+        },
+        "is_priv_port": {
+          "locked": true,
+          "reason": "This identifies which service is being targeted. Changing it means attacking a different service, not evading detection on this one."
+        }
+      }
     },
     {
       "attackType": "ps",
@@ -75,7 +225,57 @@
         "logged_in": 1.0,
         "is_priv_port": 1.0
       },
-      "modelProbability": 0.723
+      "modelProbability": 0.7619,
+      "featureNotes": {
+        "duration": {
+          "locked": false,
+          "cost": "This activity happens locally after access; network-level duration carries a weak signal either way."
+        },
+        "src_bytes": {
+          "locked": false,
+          "cost": "Weak signal for this attack type; the exploit runs locally, not over the wire."
+        },
+        "dst_bytes": {
+          "locked": false,
+          "cost": "Same, weak signal here since the exploit runs locally."
+        },
+        "count": {
+          "locked": false,
+          "cost": "Weak signal; this attack rarely shows up as unusual connection volume."
+        },
+        "srv_count": {
+          "locked": false,
+          "cost": "Weak signal, same reason."
+        },
+        "serror_rate": {
+          "locked": false,
+          "cost": "Weak signal; this attack does not depend on connection errors."
+        },
+        "same_srv_rate": {
+          "locked": false,
+          "cost": "Weak signal for this attack type."
+        },
+        "dst_host_count": {
+          "locked": false,
+          "cost": "Weak signal for this attack type."
+        },
+        "dst_host_srv_count": {
+          "locked": false,
+          "cost": "Weak signal for this attack type."
+        },
+        "flag_is_error": {
+          "locked": false,
+          "cost": "Weak signal here; this attack already completes a normal connection."
+        },
+        "logged_in": {
+          "locked": true,
+          "reason": "Faking a successful login means actually compromising valid credentials, a separate problem from anything else in this flow record."
+        },
+        "is_priv_port": {
+          "locked": true,
+          "reason": "This identifies which service is being targeted. Changing it means attacking a different service, not evading detection on this one."
+        }
+      }
     }
   ]
 }
