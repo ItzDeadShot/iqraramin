@@ -2,6 +2,7 @@
   "name": "itzdeadshot.github.io",
   "type": "module",
   "version": "0.0.1",
+  "packageManager": "pnpm@12.4.2",
   "engines": {
     "node": ">=22.12.0"
   },
@@ -15,9 +16,6 @@
   },
   "dependencies": {
     "astro": "^7.3.5"
-  },
-  "allowScripts": {
-    "esbuild": true
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

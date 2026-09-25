@@ -1,0 +1,12 @@
+# Only esbuild may run install scripts; every other dependency's scripts are blocked.
+allowBuilds:
+  esbuild: true
+
+# Refuse package versions published less than a day ago (pnpm's default since
+# v11, stated here on purpose), so a freshly hijacked release can't be pulled
+# in before it's caught. Exclusions are pinned to exact versions.
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+  - '@vitest/mocker@5.0.2'
+  - '@vitest/spy@5.0.2'
+  - vitest@5.0.2

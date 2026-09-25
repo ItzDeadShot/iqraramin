@@ -244,6 +244,12 @@ astro dev --background
 
 Manage it with `astro dev stop`, `astro dev status`, `astro dev logs`.
 
-Type-check content schemas and templates with `npm run astro check` (or
-`npx astro check`). A bad frontmatter/data file should fail `astro build`,
+Package manager is **pnpm** (pinned via `packageManager` in `package.json`;
+the deploy action reads it). `pnpm-workspace.yaml` blocks dependency install
+scripts except esbuild's and refuses package versions under a day old
+(`minimumReleaseAge: 1440`); adding a brand-new release means an exact-version
+entry in `minimumReleaseAgeExclude`. Don't add a `package-lock.json`.
+
+Run tests with `pnpm test`. Type-check content schemas and templates with
+`pnpm astro check`. A bad frontmatter/data file should fail `astro build`,
 not just look wrong at runtime; that's on purpose.

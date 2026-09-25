@@ -28,18 +28,19 @@ Status: Phase 1 (scaffold). No visual design has been chosen yet.
 ## Local development
 
 ```sh
-npm install
-npm run dev       # http://localhost:4321
-npm run astro check   # type-check schemas and templates
-npm run build     # static output to ./dist/
-npm run preview   # serve the built ./dist/ locally
+pnpm install         # pnpm is pinned via "packageManager" in package.json
+pnpm dev             # http://localhost:4321
+pnpm test            # unit tests (Vitest) for the interactive pieces' math
+pnpm astro check     # type-check schemas and templates
+pnpm build           # static output to ./dist/
+pnpm preview         # serve the built ./dist/ locally
 ```
 
 Content lives entirely in `src/content/`. Adding or editing a project,
 blog post, certification, talk, or news item is a matter of editing a
 Markdown or YAML file there and pushing; no component changes needed.
 Every collection has a Zod schema in `src/content.config.ts`, so a
-malformed entry fails `npm run build` with a specific error instead of
+malformed entry fails `pnpm build` with a specific error instead of
 silently breaking a page.
 
 ## Deploying (GitHub Pages)
