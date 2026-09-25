@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import EvadeDetector from '../components/EvadeDetector.astro';
+---
+
+<BaseLayout title="Research | Muhammad Iqrar Amin" description="Publications and interactive research pieces from Muhammad Iqrar Amin's work on federated learning, intrusion detection, and explainable AI.">
+	<main class="research-page">
+		<h1>Research</h1>
+		<p>
+			Publications from high-impact, top-quartile venues will be listed here (parsed from a BibTeX
+			file at build time), still to come. In the meantime, this page also hosts a working piece
+			from that research.
+		</p>
+	</main>
+	<EvadeDetector />
+</BaseLayout>
+
+<style>
+	.research-page {
+		max-width: var(--content-width);
+		margin: 0 auto;
+		padding: var(--space-5) var(--space-3) 0;
+	}
+</style>

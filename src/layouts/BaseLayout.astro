@@ -33,6 +33,53 @@ const csp = [
 		<title>{title}</title>
 	</head>
 	<body>
+		<header class="site-header">
+			<a class="wordmark" href="/">Q.</a>
+			<nav class="site-nav" aria-label="Primary">
+				<a href="/">Home</a>
+				<a href="/research">Research</a>
+			</nav>
+		</header>
 		<slot />
 	</body>
 </html>
+
+<style>
+	.site-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+		max-width: var(--content-width);
+		margin: 0 auto;
+		padding: var(--space-4) var(--space-3);
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.wordmark {
+		font-family: var(--font-display);
+		font-weight: 700;
+		font-size: 1.25rem;
+		text-decoration: none;
+		color: var(--color-fg);
+	}
+
+	.site-nav {
+		display: flex;
+		gap: var(--space-4);
+	}
+
+	.site-nav a {
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		text-decoration: none;
+		color: var(--color-muted);
+	}
+
+	.site-nav a:hover {
+		color: var(--color-accent);
+	}
+</style>

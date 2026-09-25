@@ -43,14 +43,20 @@ Certifications, Now, Contact, 404. Only `index.astro` exists so far
 (Phase 1 sanity check, not final design).
 
 ## Design direction
-Chosen: **Case File** (dossier / redacted-report aesthetic, see the
-published design-direction artifact from the design-review conversation).
-Not yet implemented in `src/styles/global.css` (still placeholder-neutral).
-Fraunces (serif, 500-700) for headings, JetBrains Mono for metadata; cool
-stone-grey paper background, stamp-red accent used only on status labels;
-sharp corners, no rounded cards, status shown as a rotated bordered "stamp."
-Light and dark mode, accessible. Avoid security clichés (no green-on-black
-terminal, no Matrix effects, no fake shell prompts).
+Chosen and implemented: **Case File** (dossier / redacted-report
+aesthetic). Tokens live in `src/styles/global.css`: Fraunces (self-hosted
+variable font, `public/fonts/fraunces-variable.woff2`, `font-optical-sizing:
+auto` so one file covers body text and display headings) for both body and
+headings, JetBrains Mono (self-hosted, `public/fonts/jetbrains-mono-variable.woff2`)
+for metadata; cool stone-grey paper background, stamp-red accent reserved
+for flagged/malicious state and status labels; sharp corners (no rounded
+cards), status shown as a rotated bordered "stamp." Light/dark via
+`prefers-color-scheme` plus a `[data-theme]` override hook for a future
+toggle (not built yet). Both self-hosted fonts are OFL-licensed, see
+`public/fonts/LICENSE.md`. Contrast-checked: every text/background pairing
+in both themes clears WCAG AA (4.79:1 to 15.5:1). `BaseLayout.astro` has a
+minimal site nav (Home, Research only, since those are the only pages that
+exist so far).
 
 ## Security touches (not yet added)
 - `/.well-known/security.txt`
@@ -111,7 +117,52 @@ Build order and status:
    **Still open**: once Piece 1's TS federated training exists, add a
    Vitest parity test confirming centralized TS training reaches accuracy
    within a few points of this Python model on the same data and seed.
-2. Piece 2, "Evade my detector" (Research) - next up.
+2. **Piece 2, "Evade my detector"** - done, on `/research`
+   (`src/components/EvadeDetector.astro`, math in `src/lib/ids/detector.ts`,
+   client wiring in `src/lib/ids/evade-detector-client.ts`, copy in
+   `src/content/data/pieces.yaml`). Real logistic-regression math runs
+   client-side on every slider input: live probability, per-feature
+   attribution bars (`w_i * (z_i - baseline_z_i)`, sums exactly to the
+   logit difference, tested), and an analytically-computed minimal
+   counterfactual shown at all times (not just after success), comparing
+   the visitor's actual path to the true minimum.
+   **Important bug found and fixed during testing**: the first version of
+   the counterfactual math solved an *unconstrained* minimum-norm problem,
+   which for all 4 samples wanted at least one feature to move outside its
+   slider's plausible [min, max] range (e.g. `dst_host_count` above its
+   max). Naively clamping that solution left every sample looking
+   un-evadable even when dragging every unlocked slider to its extreme
+   (verified in a real headless-browser run: neptune only moved from
+   99.8% to 98.5%). Fixed with a small bound-constrained active-set
+   algorithm (`computeMinimalCounterfactual` in `detector.ts`): solve the
+   closed form over free features, clamp any that violate their bound and
+   move them to a fixed set, re-solve, repeat (at most 12 passes). With
+   that fix, all 4 real samples are genuinely evadable within plausible
+   bounds, confirmed with a real Playwright run (99.8% down to 0.6% by
+   choosing the correct direction per slider). `feasible`/
+   `achievedProbability` fields let the UI honestly report the rare case
+   where even saturating every unlocked feature doesn't reach the
+   threshold, instead of silently doing nothing.
+   **Deviations from the global rules, worth confirming**: no Web Worker
+   (the "heavy work" rule is about training rounds; a 12-weight dot
+   product plus a sigmoid on every slider input is microseconds of work,
+   not worth the complexity) and no seeded PRNG (nothing at runtime is
+   random; "New sample" round-robins deterministically through the 4
+   preselected flows). `client:visible` itself is a framework-component
+   directive and doesn't apply to a plain `.astro` component with a
+   vanilla `<script>`, so the same lazy-hydration behavior is done by hand
+   with an `IntersectionObserver` in the component's script.
+   Verified: 17 Vitest cases (including against the real production
+   model/samples, not just synthetic fixtures) all pass; `astro check`
+   clean; JS bundle 15.9KB raw / 5.0KB gzipped (well under the 50KB
+   budget) including the bundled feature-schema/scaler/model/samples JSON;
+   real headless-Chromium runs confirm locked sliders truly can't move,
+   keyboard operation works, static (pre-hydration) HTML already shows the
+   correct neptune sample/probability/bars/locks, light and dark mode both
+   render correctly, mobile layout stacks without horizontal scroll, no
+   console errors. Have not run Lighthouse itself.
+   Still has a `TODO(Q):` placeholder for the explainer body text, per the
+   copy rules.
 3. Piece 1, federated poisoning sandbox (Home hero).
 4. Piece 3, packet dissector bio (About).
 5. Piece 4, MITRE ATT&CK coverage matrix (`/coverage`, standalone page).

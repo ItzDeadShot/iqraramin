@@ -1,0 +1,385 @@
+---
+import { getEntry } from 'astro:content';
+import { FEATURES, MODEL, SAMPLES, SCALER } from '../lib/ids/data';
+import {
+	applyTransform,
+	computeAttributions,
+	computeDelta,
+	computeMinimalCounterfactual,
+	computeProbability,
+	describeCounterfactual,
+	formatFeatureValue,
+	lockedKeysFor,
+} from '../lib/ids/detector';
+
+const copy = await getEntry('pieces', 'evade-detector');
+if (!copy) throw new Error('Missing "evade-detector" entry in src/content/data/pieces.yaml');
+
+const sample = SAMPLES[0];
+const locked = lockedKeysFor(sample);
+const probability = computeProbability(sample.features, FEATURES, SCALER, MODEL);
+const attributions = computeAttributions(sample.features, FEATURES, SCALER, MODEL);
+const scaleMax = Math.max(1e-6, ...Object.values(attributions).map((v) => Math.abs(v)));
+const malicious = probability >= 0.5;
+
+const counterfactual = computeMinimalCounterfactual(sample.features, FEATURES, SCALER, MODEL, locked);
+const minimalPathText = describeCounterfactual(counterfactual, FEATURES, locked);
+const userDelta = computeDelta(sample.features, sample.features, FEATURES, SCALER);
+const userDeltaText =
+	`You changed ${userDelta.featuresChanged} feature${userDelta.featuresChanged === 1 ? '' : 's'}, ` +
+	`moving ${userDelta.distanceMoved.toFixed(2)} units in the model's standardized feature space. ` +
+	minimalPathText;
+
+function sliderBounds(spec: (typeof FEATURES)[number]) {
+	const isLog = spec.transform === 'log1p';
+	return {
+		min: isLog ? applyTransform(spec.min, 'log1p') : spec.min,
+		max: isLog ? applyTransform(spec.max, 'log1p') : spec.max,
+		value: isLog ? applyTransform(sample.features[spec.key], 'log1p') : sample.features[spec.key],
+		step: spec.unit === 'boolean' || spec.unit === 'connections' ? '1' : isLog ? 'any' : '0.01',
+	};
+}
+---
+
+<section class="evade-detector" data-component="evade-detector" aria-labelledby="evade-detector-title">
+	<header class="evade-header">
+		<p class="mono eyebrow">Interactive research piece</p>
+		<h2 id="evade-detector-title">{copy.data.title}</h2>
+		<p>{copy.data.intro}</p>
+		<p class="mono toy-note">{copy.data.toyModelNote}</p>
+	</header>
+
+	<div class="flow-panel">
+		<div class="flow-panel-top">
+			<span class="mono attack-type" data-attack-type>{sample.attackType} ({sample.category})</span>
+			<button type="button" class="new-sample-btn" data-new-sample>New sample</button>
+		</div>
+		<p class="verdict-line" aria-live="polite">
+			<span class="verdict-stamp mono" data-verdict data-state={malicious ? 'malicious' : 'benign'}
+				>{malicious ? 'Flagged: malicious' : 'Cleared: benign'}</span
+			>
+			<span class="probability-note">model confidence <strong class="mono" data-probability>{(probability * 100).toFixed(1)}%</strong> (evades below 50%)</span>
+		</p>
+	</div>
+
+	<div class="feature-grid">
+		{
+			FEATURES.map((spec) => {
+				const bounds = sliderBounds(spec);
+				const isLocked = locked.has(spec.key);
+				const note = sample.featureNotes[spec.key];
+				const frac = Math.max(-1, Math.min(1, attributions[spec.key] / scaleMax));
+				return (
+					<div class="feature-row" data-feature={spec.key}>
+						<div class="feature-label-row">
+							<label for={`slider-${spec.key}`}>{spec.label}</label>
+							{isLocked && <span class="lock-badge mono">locked</span>}
+						</div>
+						<div class="slider-row">
+							<input
+								type="range"
+								id={`slider-${spec.key}`}
+								data-feature-key={spec.key}
+								min={bounds.min}
+								max={bounds.max}
+								step={bounds.step}
+								value={bounds.value}
+								disabled={isLocked}
+								aria-describedby={`note-${spec.key}`}
+								aria-valuetext={formatFeatureValue(spec, sample.features[spec.key])}
+							/>
+							<output for={`slider-${spec.key}`} class="mono feature-value" data-value-for={spec.key}>
+								{formatFeatureValue(spec, sample.features[spec.key])}
+							</output>
+						</div>
+						<div class="attribution-track" aria-hidden="true">
+							<div class="attribution-bar" data-bar-for={spec.key} data-sign={frac >= 0 ? 'positive' : 'negative'} style={`--pct: ${frac}`} />
+						</div>
+						<p class="feature-note" id={`note-${spec.key}`}>{isLocked ? note.reason : note.cost}</p>
+					</div>
+				);
+			})
+		}
+	</div>
+
+	<div class="minimal-path" data-minimal-path hidden={!malicious} aria-live="polite">
+		<p class="mono minimal-path-label">Minimal path to evade</p>
+		<p data-minimal-path-text>{minimalPathText}</p>
+	</div>
+
+	<div class="evasion-result" data-evasion-result hidden={malicious} aria-live="polite">
+		<h3>Detector evaded</h3>
+		<p data-user-delta>{userDeltaText}</p>
+	</div>
+
+	<div class="explainer">
+		<h3>{copy.data.explainerTitle}</h3>
+		<p>{copy.data.explainerBody}</p>
+	</div>
+</section>
+
+<script>
+	import { initEvadeDetector } from '../lib/ids/evade-detector-client';
+
+	function boot() {
+		const root = document.querySelector<HTMLElement>('[data-component="evade-detector"]');
+		if (root) initEvadeDetector(root);
+	}
+
+	// Vanilla-TS equivalent of client:visible: only pay for hydration once
+	// this piece actually scrolls into view.
+	const root = document.querySelector('[data-component="evade-detector"]');
+	if (root && 'IntersectionObserver' in window) {
+		const observer = new IntersectionObserver((entries, obs) => {
+			if (entries.some((e) => e.isIntersecting)) {
+				boot();
+				obs.disconnect();
+			}
+		});
+		observer.observe(root);
+	} else {
+		boot();
+	}
+</script>
+
+<style>
+	.evade-detector {
+		max-width: var(--content-width);
+		margin: 0 auto;
+		padding: var(--space-5) var(--space-3);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.eyebrow {
+		color: var(--color-accent);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		font-size: 0.75rem;
+		margin: 0 0 var(--space-2);
+	}
+
+	.toy-note {
+		color: var(--color-muted);
+		font-size: 0.8rem;
+	}
+
+	.flow-panel {
+		border: 1px solid var(--color-border);
+		background: var(--color-surface);
+		padding: var(--space-3) var(--space-4);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.flow-panel-top {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+	}
+
+	.attack-type {
+		text-transform: uppercase;
+		font-size: 0.8rem;
+		letter-spacing: 0.04em;
+		color: var(--color-muted);
+	}
+
+	.new-sample-btn {
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		background: transparent;
+		border: 1px solid var(--color-border);
+		color: var(--color-fg);
+		padding: var(--space-1) var(--space-3);
+		cursor: pointer;
+	}
+
+	.new-sample-btn:hover {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+	}
+
+	.verdict-line {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		flex-wrap: wrap;
+		margin: 0;
+	}
+
+	.verdict-stamp {
+		display: inline-block;
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		padding: var(--space-1) var(--space-2);
+		border: 1.5px solid currentColor;
+		transform: rotate(-1.5deg);
+	}
+
+	.verdict-stamp[data-state='malicious'] {
+		color: var(--color-accent);
+	}
+
+	.verdict-stamp[data-state='benign'] {
+		color: var(--color-muted);
+	}
+
+	.probability-note {
+		font-size: 0.85rem;
+		color: var(--color-muted);
+	}
+
+	.feature-grid {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	.feature-row {
+		border-top: 1px solid var(--color-border);
+		padding-top: var(--space-3);
+	}
+
+	.feature-label-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-bottom: var(--space-1);
+	}
+
+	.feature-label-row label {
+		font-weight: 600;
+	}
+
+	.lock-badge {
+		font-size: 0.7rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+		border: 1px solid var(--color-accent);
+		padding: 0 var(--space-1);
+	}
+
+	.slider-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	.slider-row input[type='range'] {
+		flex: 1;
+		accent-color: var(--color-accent);
+	}
+
+	.slider-row input[type='range']:disabled {
+		opacity: 0.5;
+	}
+
+	.feature-value {
+		min-width: 6.5rem;
+		text-align: right;
+		font-size: 0.85rem;
+		color: var(--color-muted);
+	}
+
+	.attribution-track {
+		position: relative;
+		height: 6px;
+		background: var(--color-border);
+		margin-top: var(--space-2);
+	}
+
+	.attribution-track::before {
+		content: '';
+		position: absolute;
+		left: 50%;
+		top: -3px;
+		bottom: -3px;
+		width: 1px;
+		background: var(--color-fg);
+		opacity: 0.3;
+	}
+
+	.attribution-bar {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 50%;
+		width: 50%;
+		transform-origin: left center;
+		transform: scaleX(var(--pct, 0));
+		transition: transform 0.12s ease-out;
+	}
+
+	.attribution-bar[data-sign='positive'] {
+		background: var(--color-accent);
+	}
+
+	.attribution-bar[data-sign='negative'] {
+		background: var(--color-muted);
+	}
+
+	.feature-note {
+		margin: var(--space-2) 0 0;
+		font-size: 0.8rem;
+		color: var(--color-muted);
+	}
+
+	.minimal-path {
+		border: 1px dashed var(--color-border);
+		padding: var(--space-3) var(--space-4);
+	}
+
+	.minimal-path-label {
+		margin: 0 0 var(--space-1);
+		font-size: 0.7rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.minimal-path p:not(.minimal-path-label) {
+		margin: 0;
+		font-size: 0.9rem;
+		color: var(--color-muted);
+	}
+
+	.evasion-result {
+		border: 1.5px solid var(--color-accent);
+		padding: var(--space-3) var(--space-4);
+	}
+
+	.evasion-result h3 {
+		margin-top: 0;
+		color: var(--color-accent);
+	}
+
+	.evasion-result p {
+		font-size: 0.9rem;
+	}
+
+	.explainer {
+		border-top: 1px solid var(--color-border);
+		padding-top: var(--space-3);
+	}
+
+	@media (max-width: 640px) {
+		.slider-row {
+			flex-wrap: wrap;
+		}
+
+		.feature-value {
+			min-width: auto;
+			text-align: left;
+		}
+	}
+</style>

@@ -1,26 +1,75 @@
 /*
-  Placeholder base styles. No visual design has been chosen yet
-  (see Phase 1 design proposal). System font stack and neutral
-  colors only, so pages are readable while content/schemas are
-  built out.
+  Case File: research lab notebook / redacted-report aesthetic (chosen
+  design direction). Fraunces (a variable serif with an optical-size axis,
+  so one file serves both body text and display headings) for reading and
+  headings, JetBrains Mono for metadata and labels. Cool stone-grey paper,
+  a stamp-red accent reserved for flagged/malicious state and status
+  labels. Sharp corners, no rounded cards.
 */
 
+@font-face {
+	font-family: 'Fraunces';
+	font-style: normal;
+	font-weight: 400 700;
+	font-display: swap;
+	src: url('/fonts/fraunces-variable.woff2') format('woff2');
+}
+
+@font-face {
+	font-family: 'JetBrains Mono';
+	font-style: normal;
+	font-weight: 400 600;
+	font-display: swap;
+	src: url('/fonts/jetbrains-mono-variable.woff2') format('woff2');
+}
+
 :root {
-	--color-bg: #ffffff;
-	--color-fg: #1a1a1a;
-	--color-muted: #5c5c5c;
-	--color-accent: #2b5fff;
-	--font-body: system-ui, sans-serif;
-	--font-mono: ui-monospace, monospace;
+	--color-bg: #edeee7;
+	--color-surface: #f9f9f4;
+	--color-fg: #1e2318;
+	--color-muted: #656a57;
+	--color-accent: #a8281c;
+	--color-accent-ink: #fcedea;
+	--color-border: #cbcebe;
+
+	--font-body: 'Fraunces', Georgia, serif;
+	--font-display: 'Fraunces', Georgia, serif;
+	--font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 1rem;
+	--space-4: 1.5rem;
+	--space-5: 2.5rem;
+	--space-6: 4rem;
+
+	--content-width: 46rem;
+
+	color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-	:root {
-		--color-bg: #12141a;
-		--color-fg: #f0f0f0;
-		--color-muted: #a0a0a8;
-		--color-accent: #6f93ff;
+	:root:not([data-theme='light']) {
+		--color-bg: #12140d;
+		--color-surface: #1b1d14;
+		--color-fg: #ecebe1;
+		--color-muted: #a2a38f;
+		--color-accent: #e2604b;
+		--color-accent-ink: #2b0c08;
+		--color-border: #33362a;
+		color-scheme: dark;
 	}
+}
+
+:root[data-theme='dark'] {
+	--color-bg: #12140d;
+	--color-surface: #1b1d14;
+	--color-fg: #ecebe1;
+	--color-muted: #a2a38f;
+	--color-accent: #e2604b;
+	--color-accent-ink: #2b0c08;
+	--color-border: #33362a;
+	color-scheme: dark;
 }
 
 * {
@@ -37,7 +86,18 @@ body {
 	background: var(--color-bg);
 	color: var(--color-fg);
 	font-family: var(--font-body);
-	line-height: 1.5;
+	font-optical-sizing: auto;
+	line-height: 1.55;
+}
+
+h1,
+h2,
+h3,
+h4 {
+	font-family: var(--font-display);
+	font-weight: 600;
+	line-height: 1.15;
+	text-wrap: balance;
 }
 
 a {
@@ -45,6 +105,23 @@ a {
 }
 
 code,
-pre {
+pre,
+.mono {
 	font-family: var(--font-mono);
+}
+
+:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.001ms !important;
+		scroll-behavior: auto !important;
+	}
 }

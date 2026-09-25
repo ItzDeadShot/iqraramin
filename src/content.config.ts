@@ -80,4 +80,16 @@ const now = defineCollection({
 	}),
 });
 
-export const collections = { projects, blog, certifications, talks, news, now };
+const pieces = defineCollection({
+	loader: file('./src/content/data/pieces.yaml'),
+	schema: z.object({
+		id: z.string(),
+		title: z.string(),
+		toyModelNote: z.string(),
+		intro: z.string(),
+		explainerTitle: z.string(),
+		explainerBody: z.string(),
+	}),
+});
+
+export const collections = { projects, blog, certifications, talks, news, now, pieces };
