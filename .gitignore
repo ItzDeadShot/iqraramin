@@ -22,3 +22,8 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# raw dataset downloads (offline pipeline scratch space; only its generated
+# JSON under src/content/data/ids/ is committed)
+scripts/.cache/
+scripts/__pycache__/

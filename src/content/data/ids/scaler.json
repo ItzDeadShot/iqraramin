@@ -1,0 +1,59 @@
+{
+  "license": "NSL-KDD dataset. Cite: M. Tavallaee, E. Bagheri, W. Lu, A. Ghorbani, 'A Detailed Analysis of the KDD CUP 99 Data Set,' 2nd IEEE Symposium on Computational Intelligence for Security and Defense Applications (CISDA), 2009. Original terms (unb.ca/cic/datasets/nsl.html) permit redistribution and mirroring in any form with this citation retained.",
+  "featureOrder": [
+    "duration",
+    "src_bytes",
+    "dst_bytes",
+    "count",
+    "srv_count",
+    "serror_rate",
+    "same_srv_rate",
+    "dst_host_count",
+    "dst_host_srv_count",
+    "flag_is_error",
+    "logged_in",
+    "is_priv_port"
+  ],
+  "mean": [
+    477.04,
+    31337.2875,
+    7873.8445,
+    63.9665,
+    22.802,
+    0.1981,
+    0.7449,
+    163.521,
+    110.359,
+    0.3225,
+    0.4685,
+    0.8125
+  ],
+  "std": [
+    3204.4827,
+    571426.2587,
+    164312.491,
+    105.8323,
+    61.3236,
+    0.3933,
+    0.4062,
+    108.5402,
+    109.2914,
+    0.4674,
+    0.499,
+    0.3903
+  ],
+  "benignMean": [
+    280.1,
+    30704.555,
+    4762.7,
+    23.157,
+    28.083,
+    0.0146,
+    0.9649,
+    151.741,
+    188.613,
+    0.063,
+    0.689,
+    0.937
+  ]
+}

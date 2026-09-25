@@ -1,0 +1,81 @@
+{
+  "license": "NSL-KDD dataset. Cite: M. Tavallaee, E. Bagheri, W. Lu, A. Ghorbani, 'A Detailed Analysis of the KDD CUP 99 Data Set,' 2nd IEEE Symposium on Computational Intelligence for Security and Defense Applications (CISDA), 2009. Original terms (unb.ca/cic/datasets/nsl.html) permit redistribution and mirroring in any form with this citation retained.",
+  "samples": [
+    {
+      "attackType": "neptune",
+      "category": "dos",
+      "features": {
+        "duration": 0.0,
+        "src_bytes": 0.0,
+        "dst_bytes": 0.0,
+        "count": 246.0,
+        "srv_count": 18.0,
+        "serror_rate": 0.0,
+        "same_srv_rate": 0.07,
+        "dst_host_count": 218.0,
+        "dst_host_srv_count": 18.0,
+        "flag_is_error": 1.0,
+        "logged_in": 0.0,
+        "is_priv_port": 0.0
+      },
+      "modelProbability": 0.9877
+    },
+    {
+      "attackType": "satan",
+      "category": "probe",
+      "features": {
+        "duration": 0.0,
+        "src_bytes": 1.0,
+        "dst_bytes": 1.0,
+        "count": 115.0,
+        "srv_count": 1.0,
+        "serror_rate": 0.0,
+        "same_srv_rate": 0.01,
+        "dst_host_count": 255.0,
+        "dst_host_srv_count": 1.0,
+        "flag_is_error": 0.0,
+        "logged_in": 0.0,
+        "is_priv_port": 0.0
+      },
+      "modelProbability": 0.8648
+    },
+    {
+      "attackType": "guess_passwd",
+      "category": "r2l",
+      "features": {
+        "duration": 0.0,
+        "src_bytes": 26.0,
+        "dst_bytes": 157.0,
+        "count": 1.0,
+        "srv_count": 1.0,
+        "serror_rate": 0.0,
+        "same_srv_rate": 1.0,
+        "dst_host_count": 59.0,
+        "dst_host_srv_count": 31.0,
+        "flag_is_error": 0.0,
+        "logged_in": 0.0,
+        "is_priv_port": 1.0
+      },
+      "modelProbability": 0.6629
+    },
+    {
+      "attackType": "ps",
+      "category": "u2r",
+      "features": {
+        "duration": 6.0,
+        "src_bytes": 94.0,
+        "dst_bytes": 332.0,
+        "count": 1.0,
+        "srv_count": 1.0,
+        "serror_rate": 0.0,
+        "same_srv_rate": 1.0,
+        "dst_host_count": 96.0,
+        "dst_host_srv_count": 1.0,
+        "flag_is_error": 0.0,
+        "logged_in": 1.0,
+        "is_priv_port": 1.0
+      },
+      "modelProbability": 0.723
+    }
+  ]
+}

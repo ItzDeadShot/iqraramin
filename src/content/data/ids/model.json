@@ -1,0 +1,36 @@
+{
+  "license": "NSL-KDD dataset. Cite: M. Tavallaee, E. Bagheri, W. Lu, A. Ghorbani, 'A Detailed Analysis of the KDD CUP 99 Data Set,' 2nd IEEE Symposium on Computational Intelligence for Security and Defense Applications (CISDA), 2009. Original terms (unb.ca/cic/datasets/nsl.html) permit redistribution and mirroring in any form with this citation retained.",
+  "kind": "logistic_regression",
+  "trainedOn": "standardized features, see scaler.json",
+  "featureOrder": [
+    "duration",
+    "src_bytes",
+    "dst_bytes",
+    "count",
+    "srv_count",
+    "serror_rate",
+    "same_srv_rate",
+    "dst_host_count",
+    "dst_host_srv_count",
+    "flag_is_error",
+    "logged_in",
+    "is_priv_port"
+  ],
+  "weights": [
+    -0.045103,
+    -0.009511,
+    0.045359,
+    1.231174,
+    -0.147933,
+    0.56589,
+    0.037573,
+    -0.618403,
+    -1.769899,
+    0.517544,
+    0.003968,
+    -0.22474
+  ],
+  "bias": 0.200715,
+  "testAccuracy": 0.8017,
+  "testSetSize": 600
+}
