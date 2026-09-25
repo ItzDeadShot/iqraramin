@@ -1,0 +1,6 @@
+# Site-wide identity copy (home hero, and later the page footer).
+- id: site
+  name: "Muhammad Iqrar Amin"
+  tagline: >
+    Cybersecurity researcher working on federated learning, intrusion
+    detection, and explainable AI.

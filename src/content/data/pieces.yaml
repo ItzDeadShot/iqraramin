@@ -15,3 +15,19 @@
     same weights, not a canned animation.
   explainerTitle: "Why this matters for explainable IDS"
   explainerBody: "TODO(Q): write the real explanation here."
+
+- id: federated-sandbox
+  title: "Federated poisoning sandbox"
+  toyModelNote: >
+    Toy simulation: 8 clients train a logistic regression live in your
+    browser (in a Web Worker), on a balanced 2,000-row subset of NSL-KDD,
+    scored on a 600-row held-out test set. Not a production federated
+    learning system.
+  intro: >
+    Eight simulated organizations train one intrusion detector together
+    without sharing raw traffic. Each round, every client trains locally
+    and sends only a model update; the server combines those updates into
+    the next global model. Select a client to turn it malicious, then try
+    a robust aggregation rule and watch whether the server catches it.
+  explainerTitle: "Why this matters"
+  explainerBody: "TODO(Q): write the real explanation here."

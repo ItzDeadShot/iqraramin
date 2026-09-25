@@ -1,5 +1,6 @@
 ---
 import { getEntry } from 'astro:content';
+import DatasetCitation from './DatasetCitation.astro';
 import { FEATURES, MODEL, SAMPLES, SCALER } from '../lib/ids/data';
 import {
 	applyTransform,
@@ -116,6 +117,8 @@ function sliderBounds(spec: (typeof FEATURES)[number]) {
 		<h3>{copy.data.explainerTitle}</h3>
 		<p>{copy.data.explainerBody}</p>
 	</div>
+
+	<DatasetCitation />
 </section>
 
 <script>
@@ -261,7 +264,7 @@ function sliderBounds(spec: (typeof FEATURES)[number]) {
 	}
 
 	.lock-badge {
-		font-size: 0.7rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		color: var(--color-accent);
@@ -341,7 +344,7 @@ function sliderBounds(spec: (typeof FEATURES)[number]) {
 
 	.minimal-path-label {
 		margin: 0 0 var(--space-1);
-		font-size: 0.7rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--color-muted);

@@ -112,11 +112,11 @@ Build order and status:
    official host (unb.ca/cic/datasets/nsl.html) is currently down but its
    stated terms permit redistribution/mirroring with that citation, which
    is what the script's pinned mirror relies on. The citation string is
-   embedded in every generated JSON file's `license` field; still need to
-   surface it visibly wherever Piece 1/2 data is shown on the site.
-   **Still open**: once Piece 1's TS federated training exists, add a
-   Vitest parity test confirming centralized TS training reaches accuracy
-   within a few points of this Python model on the same data and seed.
+   embedded in every generated JSON file's `license` field and shown under
+   both pieces via `src/components/DatasetCitation.astro`.
+   TS/Python parity test lives in `src/lib/fl/sim.test.ts`
+   (`trainCentralized` mirrors the Python trainer; currently an exact
+   80.17% match).
 2. **Piece 2, "Evade my detector"** - done, on `/research`
    (`src/components/EvadeDetector.astro`, math in `src/lib/ids/detector.ts`,
    client wiring in `src/lib/ids/evade-detector-client.ts`, copy in
@@ -163,7 +163,50 @@ Build order and status:
    console errors. Have not run Lighthouse itself.
    Still has a `TODO(Q):` placeholder for the explainer body text, per the
    copy rules.
-3. Piece 1, federated poisoning sandbox (Home hero).
+3. **Piece 1, federated poisoning sandbox** - done, Home hero
+   (`src/components/FederatedSandbox.astro`; math in `src/lib/fl/`:
+   `sim.ts` local SGD/attacks/rounds, `aggregators.ts`, `pca.ts`,
+   `prng.ts`; `worker.ts` runs rounds in a Web Worker; `render.ts` builds
+   the SVG markup for both the build-time snapshot and the live client;
+   `sandbox-client.ts` is the DOM controller). Home hero copy comes from a
+   new `site` collection (`src/content/data/site.yaml`); the Phase 1
+   featured-projects sanity list on the home page is gone.
+   Tuned settings (`DEFAULT_TRAINING`): 1 local epoch, lr 0.05, batch 25,
+   L2 1e-3, seeded Gaussian init (std 1). Honest FedAvg goes from 43%
+   (round 0) to ~80% by round 6-10, peaking ~87% then drifting toward
+   ~84%: early federated SGD generalizes to KDDTest+ better than the fully
+   converged offline model (80%). One boosted client (x10) drags FedAvg to
+   ~61% with ~77% of attacks missed by round 20; switching to Multi-Krum
+   or median recovers to ~79-80% within ~10 rounds. These are unit tests
+   (`sim.test.ts`), not just observations.
+   **Deviations, confirmed with measurements**: 'boost' is a boosted
+   *label flip* (explicit boosting, Bhagoji et al. 2019), because scaling
+   an honest update is harmless (FedAvg stayed at 80%); sign flip also
+   uses the scale factor (-k x update) since -1x from 1 of 8 clients
+   barely registers. "Krum" is Multi-Krum (averages the n-f best), labeled
+   as such, because classic Krum keeps 1 update and marks 7 honest ones
+   rejected. Median never marks a client rejected (with 8 clients, 6 are
+   off-median in every coordinate by construction); trimmed mean marks a
+   client rejected when trimmed in >50% of coordinates. Label flipping is
+   targeted (malicious relabeled benign); the chart's "attacks missed" line
+   is that targeted-class miss rate, shown always. All clients share the
+   pool-fitted scaler (a simplification). Robust rules sometimes reject
+   honest clients too (e.g. Multi-Krum drops C7 with no attacker); the
+   status line says so.
+   Verified: 46 Vitest cases pass (aggregators, PCA, PRNG, local training,
+   poisoning, acceptance criteria, parity); real headless-Chromium runs of
+   autoplay -> attack -> switch aggregator, reduced motion (no autoplay,
+   no packet animation, Step works), keyboard (client toggles, chart and
+   scatter tooltips via arrow keys), no-JS snapshot, no runtime network
+   requests (data is bundled into the worker), no console errors, no
+   horizontal overflow at 390px. Bundles: main-thread island 6.6KB gzip,
+   worker 36.4KB gzip including all training/test data. Lighthouse:
+   100/100/100/100 on both / and /research, CLS 0 (fixed along the way:
+   a `.fl-grid` class collision that stroked all SVG text, sub-12px labels
+   including the dataset citation, a hydration/per-round layout shift from
+   the status line, and font-swap shift via font preloads; a global
+   `[hidden] { display: none !important }` rule now backs the hidden
+   attribute). Explainer body is still `TODO(Q):`.
 4. Piece 3, packet dissector bio (About).
 5. Piece 4, MITRE ATT&CK coverage matrix (`/coverage`, standalone page).
 6. Piece 5, hidden flags (sitewide + `/flags`).

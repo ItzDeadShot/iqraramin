@@ -1,25 +1,39 @@
 ---
-import { getCollection } from 'astro:content';
+import { getEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import FederatedSandbox from '../components/FederatedSandbox.astro';
 
-const projects = await getCollection('projects');
-const featured = projects.filter((p) => p.data.featured);
+const site = await getEntry('site', 'site');
+if (!site) throw new Error('Missing "site" entry in src/content/data/site.yaml');
 ---
 
-<BaseLayout title="Muhammad Iqrar Amin">
+<BaseLayout title={site.data.name} description={site.data.tagline}>
 	<main>
-		<h1>Muhammad Iqrar Amin</h1>
-		<p>Site scaffold in progress. Visual design has not been chosen yet.</p>
-
-		<h2>Featured projects (from content collection)</h2>
-		<ul>
-			{
-				featured.map((project) => (
-					<li>
-						<strong>{project.data.title}</strong> — {project.data.type}, {project.data.year}
-					</li>
-				))
-			}
-		</ul>
+		<header class="hero">
+			<h1>{site.data.name}</h1>
+			<p class="tagline">{site.data.tagline}</p>
+		</header>
+		<FederatedSandbox />
 	</main>
 </BaseLayout>
+
+<style>
+	.hero {
+		max-width: 68rem;
+		margin: 0 auto;
+		padding: var(--space-5) var(--space-3) 0;
+	}
+
+	.hero h1 {
+		font-size: clamp(2rem, 5vw, 3.2rem);
+		font-weight: 700;
+		margin: 0 0 var(--space-2);
+	}
+
+	.tagline {
+		margin: 0;
+		max-width: 40rem;
+		font-size: 1.15rem;
+		color: var(--color-muted);
+	}
+</style>

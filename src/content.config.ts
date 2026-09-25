@@ -92,4 +92,13 @@ const pieces = defineCollection({
 	}),
 });
 
-export const collections = { projects, blog, certifications, talks, news, now, pieces };
+const site = defineCollection({
+	loader: file('./src/content/data/site.yaml'),
+	schema: z.object({
+		id: z.string(),
+		name: z.string(),
+		tagline: z.string(),
+	}),
+});
+
+export const collections = { projects, blog, certifications, talks, news, now, pieces, site };

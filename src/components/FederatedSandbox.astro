@@ -1,0 +1,908 @@
+---
+import { getEntry } from 'astro:content';
+import DatasetCitation from './DatasetCitation.astro';
+import { loadDataset } from '../lib/fl/data';
+import { N_CLIENTS, defaultConfig, evaluate, initialState, runRound, type RoundResult } from '../lib/fl/sim';
+import {
+	AGGREGATOR_LABELS,
+	CHART,
+	MAX_ROUNDS,
+	RING,
+	SCATTER,
+	attackSummary,
+	clientPosition,
+	describeRound,
+	renderChart,
+	renderRing,
+	renderScatter,
+	serverDecision,
+	type HistoryPoint,
+} from '../lib/fl/render';
+
+const copy = await getEntry('pieces', 'federated-sandbox');
+if (!copy) throw new Error('Missing "federated-sandbox" entry in src/content/data/pieces.yaml');
+
+// Build-time snapshot: a real run of the same simulation the browser runs,
+// so the no-JS / pre-hydration view shows computed numbers, not a mockup.
+const SNAPSHOT_ROUNDS = 20;
+const dataset = loadDataset();
+const config = defaultConfig();
+let state = initialState(dataset);
+const start = evaluate(state.global, dataset.testX, dataset.testY);
+const history: HistoryPoint[] = [{ round: 0, accuracy: start.accuracy, missRate: start.missRate }];
+let last: RoundResult | null = null;
+let status = '';
+for (let r = 0; r < SNAPSHOT_ROUNDS; r++) {
+	const out = runRound(state, dataset, config);
+	status = describeRound(out.result, history[history.length - 1], config.attacks);
+	state = out.state;
+	last = out.result;
+	history.push({ round: out.result.round, accuracy: out.result.accuracy, missRate: out.result.missRate });
+}
+const final = history[history.length - 1];
+const ringMarkup = renderRing(
+	config.attacks.map(() => ({ malicious: false, rejected: false })),
+	config.aggregator,
+	null,
+);
+const scatterMarkup = renderScatter(last, config.attacks);
+const chartMarkup = renderChart(history, []);
+const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
+---
+
+<section class="fl" data-component="fl-sandbox" aria-labelledby="fl-title">
+	<header class="fl-header">
+		<p class="mono eyebrow">Interactive research piece</p>
+		<h2 id="fl-title">{copy.data.title}</h2>
+		<p class="fl-intro">{copy.data.intro}</p>
+		<p class="mono toy-note">{copy.data.toyModelNote}</p>
+	</header>
+
+	<div class="fl-toolbar" role="group" aria-label="Simulation controls">
+		<div class="fl-buttons">
+			<button type="button" class="fl-btn fl-btn--primary" data-play data-requires-js aria-pressed="false" disabled>Play</button>
+			<button type="button" class="fl-btn" data-step data-requires-js disabled>Step</button>
+			<button type="button" class="fl-btn" data-reset data-requires-js disabled>Reset</button>
+		</div>
+		<label class="fl-field">
+			<span class="mono">Speed</span>
+			<select data-speed data-requires-js disabled>
+				<option value="slow">Slow</option>
+				<option value="normal" selected>Normal</option>
+				<option value="fast">Fast</option>
+			</select>
+		</label>
+		<label class="fl-field">
+			<span class="mono">Aggregator</span>
+			<select data-aggregator data-requires-js disabled>
+				{Object.entries(AGGREGATOR_LABELS).map(([value, label]) => <option value={value} selected={value === config.aggregator}>{label}</option>)}
+			</select>
+		</label>
+		<label class="fl-field" data-trim-field hidden>
+			<span class="mono">Trim (beta)</span>
+			<select data-trim-beta data-requires-js disabled>
+				<option value="0.125" selected>0.125 (1 per end)</option>
+				<option value="0.25">0.25 (2 per end)</option>
+				<option value="0.375">0.375 (3 per end)</option>
+			</select>
+		</label>
+		<label class="fl-field" data-krum-field hidden>
+			<span class="mono">Tolerate f</span>
+			<select data-krum-f data-requires-js disabled>
+				<option value="0">0</option>
+				<option value="1" selected>1</option>
+				<option value="2">2</option>
+			</select>
+		</label>
+		<fieldset class="fl-field fl-radios">
+			<legend class="mono">Client data</legend>
+			<label><input type="radio" name="fl-distribution" value="iid" checked data-requires-js disabled /> IID</label>
+			<label><input type="radio" name="fl-distribution" value="non_iid" data-requires-js disabled /> Non-IID by attack type</label>
+		</fieldset>
+		<span class="mono fl-round" data-round>Round {SNAPSHOT_ROUNDS} of {MAX_ROUNDS}</span>
+	</div>
+
+	<p class="fl-status" data-status aria-live="polite">{status}</p>
+	<p class="fl-snapshot mono" data-snapshot-note>
+		Static snapshot, computed when this page was built: {SNAPSHOT_ROUNDS} rounds of FedAvg with {N_CLIENTS} honest clients,
+		from {pct(start.accuracy)} to {pct(final.accuracy)} test accuracy. It runs live, and can be attacked, once JavaScript
+		loads.
+	</p>
+
+	<div class="fl-layout">
+		<div class="fl-panel">
+			<h3 class="fl-panel-title mono">Clients and server</h3>
+			<div class="fl-ring">
+				<svg data-ring viewBox={`0 0 ${RING.size} ${RING.size}`} aria-hidden="true" set:html={ringMarkup} />
+				{
+					Array.from({ length: N_CLIENTS }, (_, i) => {
+						const p = clientPosition(i, N_CLIENTS);
+						return (
+							<button
+								type="button"
+								class="fl-client"
+								data-client={i}
+								data-requires-js
+								data-malicious="false"
+								data-rejected="false"
+								aria-pressed="false"
+								aria-label={`C${i + 1} honest. Client ${i + 1} is honest; press to make it malicious.`}
+								style={`left:${((p.x / RING.size) * 100).toFixed(2)}%;top:${((p.y / RING.size) * 100).toFixed(2)}%`}
+								disabled
+							>
+								<span class="fl-client-name">C{i + 1}</span>
+								<span class="fl-client-sub" data-client-sub>honest</span>
+								<span class="fl-client-tag" data-client-tag hidden>rejected</span>
+							</button>
+						);
+					})
+				}
+			</div>
+			<h3 class="fl-panel-title mono">Attackers</h3>
+			<ul class="fl-attackers" data-attackers>
+				<li class="attacker attacker--empty">No attackers. Select a client on the ring to make it malicious.</li>
+			</ul>
+		</div>
+
+		<div class="fl-panel">
+			<h3 class="fl-panel-title mono">Client updates this round, 2D projection (PCA)</h3>
+			<ul class="fl-legend mono" aria-hidden="true">
+				<li><svg viewBox="0 0 12 12"><circle class="fl-key-honest" cx="6" cy="6" r="4.5" /></svg>honest</li>
+				<li><svg viewBox="0 0 12 12"><rect class="fl-key-attacker" x="1.5" y="1.5" width="9" height="9" /></svg>attacker</li>
+				<li><svg viewBox="0 0 12 12"><circle class="fl-key-rejected" cx="6" cy="6" r="4" /></svg>rejected (hollow)</li>
+				<li><svg viewBox="0 0 12 12"><rect class="fl-key-aggregate" x="2.5" y="2.5" width="7" height="7" transform="rotate(45 6 6)" /></svg>aggregate</li>
+			</ul>
+			<div class="fl-plot">
+				<svg
+					data-scatter
+					class="fl-svg"
+					viewBox={`0 0 ${SCATTER.width} ${SCATTER.height}`}
+					role="img"
+					tabindex="0"
+					aria-label={last ? `Projection of round ${last.round} client updates. ${last.clients.map((c) => `Client ${c.id + 1}: ${serverDecision(last!, c.id)}`).join(' ')}` : 'No client updates yet.'}
+					set:html={scatterMarkup}
+				/>
+				<div class="fl-tip mono" data-scatter-tip hidden></div>
+			</div>
+
+			<h3 class="fl-panel-title mono">Global model on the held-out test set</h3>
+			<ul class="fl-legend mono" aria-hidden="true">
+				<li><svg viewBox="0 0 20 12"><line class="fl-key-accuracy" x1="1" y1="6" x2="19" y2="6" /></svg>accuracy</li>
+				<li><svg viewBox="0 0 20 12"><line class="fl-key-miss" x1="1" y1="6" x2="19" y2="6" /></svg>attacks missed</li>
+			</ul>
+			<div class="fl-plot">
+				<svg
+					data-chart
+					class="fl-svg"
+					viewBox={`0 0 ${CHART.width} ${CHART.height}`}
+					role="img"
+					tabindex="0"
+					aria-label={`Test accuracy and missed-attack rate by round. Round ${final.round}: accuracy ${pct(final.accuracy)}, ${pct(final.missRate)} of attacks missed.`}
+					set:html={chartMarkup}
+				/>
+				<div class="fl-tip mono" data-chart-tip hidden></div>
+			</div>
+		</div>
+	</div>
+
+	<details class="fl-details">
+		<summary class="mono">Round data as tables</summary>
+		<div class="fl-tables">
+			<table>
+				<caption>Latest round, per client</caption>
+				<thead><tr><th scope="col">Client</th><th scope="col">Role</th><th scope="col">Update size</th><th scope="col">Server decision</th></tr></thead>
+				<tbody data-client-table>
+					{
+						config.attacks.map((attack, i) => (
+							<tr>
+								<td>Client {i + 1}</td>
+								<td>{attackSummary(attack)}</td>
+								<td class="num">{last ? last.clients[i].updateNorm.toFixed(3) : '-'}</td>
+								<td>{last ? serverDecision(last, i) : '-'}</td>
+							</tr>
+						))
+					}
+				</tbody>
+			</table>
+			<table>
+				<caption>Global model by round</caption>
+				<thead><tr><th scope="col">Round</th><th scope="col">Accuracy</th><th scope="col">Attacks missed</th></tr></thead>
+				<tbody data-history-table>
+					{
+						history.map((h) => (
+							<tr>
+								<td class="num">{h.round}</td>
+								<td class="num">{pct(h.accuracy)}</td>
+								<td class="num">{pct(h.missRate)}</td>
+							</tr>
+						))
+					}
+				</tbody>
+			</table>
+		</div>
+	</details>
+
+	<div class="explainer">
+		<h3>{copy.data.explainerTitle}</h3>
+		<p>{copy.data.explainerBody}</p>
+	</div>
+
+	<DatasetCitation />
+</section>
+
+<script>
+	import { initFederatedSandbox } from '../lib/fl/sandbox-client';
+
+	const root = document.querySelector<HTMLElement>('[data-component="fl-sandbox"]');
+	if (root) {
+		const boot = () => initFederatedSandbox(root);
+		// Vanilla-TS equivalent of client:visible: the worker (and its bundled
+		// training data) only loads once the sandbox scrolls into view.
+		if ('IntersectionObserver' in window) {
+			const observer = new IntersectionObserver((entries, obs) => {
+				if (entries.some((e) => e.isIntersecting)) {
+					obs.disconnect();
+					boot();
+				}
+			});
+			observer.observe(root);
+		} else {
+			boot();
+		}
+	}
+</script>
+
+<style>
+	.fl {
+		max-width: 68rem;
+		margin: 0 auto;
+		padding: var(--space-5) var(--space-3);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.fl-header p,
+	.fl-header h2 {
+		max-width: var(--content-width);
+	}
+
+	.eyebrow {
+		color: var(--color-accent);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		font-size: 0.75rem;
+		margin: 0 0 var(--space-2);
+	}
+
+	.toy-note {
+		color: var(--color-muted);
+		font-size: 0.8rem;
+	}
+
+	.fl-toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		gap: var(--space-3) var(--space-4);
+		padding: var(--space-3);
+		border: 1px solid var(--color-border);
+		background: var(--color-surface);
+	}
+
+	.fl-buttons {
+		display: flex;
+		gap: var(--space-2);
+	}
+
+	.fl-btn,
+	:global(.small-btn) {
+		font-family: var(--font-mono);
+		font-size: 0.8rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		background: transparent;
+		border: 1px solid var(--color-border);
+		color: var(--color-fg);
+		padding: var(--space-2) var(--space-3);
+		min-height: 2.5rem;
+		cursor: pointer;
+	}
+
+	.fl-btn--primary {
+		border-color: var(--color-fg);
+		min-width: 5.5rem;
+	}
+
+	.fl-btn:hover:not(:disabled),
+	:global(.small-btn:hover) {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+	}
+
+	.fl-btn:disabled {
+		opacity: 0.45;
+		cursor: default;
+	}
+
+	.fl-field {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+		font-size: 0.85rem;
+	}
+
+	.fl-field > span,
+	.fl-radios legend {
+		font-size: 0.75rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.fl select,
+	:global(.fl-attackers select) {
+		font: inherit;
+		font-size: 0.85rem;
+		color: var(--color-fg);
+		background: var(--color-bg);
+		border: 1px solid var(--color-border);
+		padding: var(--space-1) var(--space-2);
+		min-height: 2.25rem;
+	}
+
+	.fl-radios {
+		border: 0;
+		margin: 0;
+		padding: 0;
+		flex-direction: row;
+		flex-wrap: wrap;
+		gap: var(--space-1) var(--space-3);
+	}
+
+	.fl-radios legend {
+		width: 100%;
+		margin-bottom: var(--space-1);
+		padding: 0;
+	}
+
+	.fl-radios label {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		min-height: 2.25rem;
+	}
+
+	.fl-radios input {
+		accent-color: var(--color-accent);
+	}
+
+	.fl-round {
+		margin-left: auto;
+		font-size: 0.8rem;
+		color: var(--color-muted);
+		align-self: center;
+	}
+
+	.fl-status {
+		margin: 0;
+		padding-left: var(--space-3);
+		border-left: 3px solid var(--color-accent);
+		font-size: 1rem;
+		min-height: 3.1em;
+	}
+
+	.fl-snapshot {
+		margin: 0;
+		font-size: 0.78rem;
+		color: var(--color-muted);
+	}
+
+	.fl-layout {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+		gap: var(--space-5);
+		align-items: start;
+	}
+
+	.fl-panel {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		min-width: 0;
+	}
+
+	.fl-panel-title {
+		margin: var(--space-2) 0 0;
+		font-size: 0.75rem;
+		font-weight: 500;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.fl-ring {
+		position: relative;
+		width: 100%;
+		max-width: 22rem;
+		aspect-ratio: 1;
+		margin: 0 auto;
+	}
+
+	.fl-ring svg {
+		width: 100%;
+		height: 100%;
+		display: block;
+	}
+
+	.fl-client {
+		position: absolute;
+		transform: translate(-50%, -50%);
+		width: 3.4rem;
+		height: 3.4rem;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 1px;
+		padding: 0;
+		background: var(--color-surface);
+		border: 1.5px solid var(--color-fg);
+		color: var(--color-fg);
+		font-family: var(--font-mono);
+		cursor: pointer;
+	}
+
+	.fl-client:disabled {
+		cursor: default;
+	}
+
+	.fl-client:hover:not(:disabled) {
+		outline: 2px solid var(--color-border);
+		outline-offset: 1px;
+	}
+
+	.fl-client[data-malicious='true'] {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+		border-width: 2.5px;
+	}
+
+	.fl-client[data-rejected='true'] {
+		border-style: dashed;
+	}
+
+	.fl-client-name {
+		font-size: 0.85rem;
+		font-weight: 600;
+	}
+
+	.fl-client-sub {
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+
+	.fl-client[data-malicious='false'] .fl-client-sub {
+		color: var(--color-muted);
+	}
+
+	.fl-client-tag {
+		position: absolute;
+		bottom: -1.3rem;
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--color-accent);
+		background: var(--color-bg);
+		padding: 0 2px;
+		white-space: nowrap;
+	}
+
+	.fl-attackers {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.fl-attackers :global(.attacker) {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2) var(--space-3);
+		padding: var(--space-2) 0;
+		border-top: 1px solid var(--color-border);
+		font-size: 0.85rem;
+	}
+
+	.fl-attackers :global(.attacker--empty) {
+		color: var(--color-muted);
+	}
+
+	.fl-attackers :global(.attacker-name) {
+		color: var(--color-accent);
+		font-weight: 600;
+		min-width: 4.5rem;
+	}
+
+	.fl-attackers :global(.attacker-field) {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	.fl-attackers :global(.attacker-param) {
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.fl-legend {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1) var(--space-3);
+		font-size: 0.75rem;
+		color: var(--color-muted);
+	}
+
+	.fl-legend li {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	.fl-legend svg {
+		width: 1rem;
+		height: 0.75rem;
+		overflow: visible;
+	}
+
+	.fl-plot {
+		position: relative;
+		max-width: 32rem;
+	}
+
+	.fl-svg {
+		width: 100%;
+		height: auto;
+		display: block;
+		overflow: visible;
+	}
+
+	.fl-tip {
+		position: absolute;
+		z-index: 2;
+		pointer-events: none;
+		max-width: 16rem;
+		padding: var(--space-1) var(--space-2);
+		font-size: 0.75rem;
+		line-height: 1.45;
+		background: var(--color-fg);
+		color: var(--color-bg);
+		transform: translate(12px, -50%);
+	}
+
+	.fl-tip[data-side='left'] {
+		transform: translate(calc(-100% - 12px), -50%);
+	}
+
+	.fl-tip :global(strong) {
+		font-weight: 600;
+	}
+
+	.fl-tip :global(.tip-muted) {
+		opacity: 0.75;
+	}
+
+	.fl-details summary {
+		cursor: pointer;
+		font-size: 0.8rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.fl-tables {
+		display: grid;
+		grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+		gap: var(--space-4);
+		margin-top: var(--space-3);
+	}
+
+	.fl-tables table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.8rem;
+	}
+
+	.fl-tables caption {
+		text-align: left;
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--color-muted);
+		padding-bottom: var(--space-1);
+	}
+
+	.fl-tables th,
+	.fl-tables td {
+		text-align: left;
+		padding: var(--space-1) var(--space-2) var(--space-1) 0;
+		border-bottom: 1px solid var(--color-border);
+		vertical-align: top;
+	}
+
+	.fl-tables th {
+		font-family: var(--font-mono);
+		font-weight: 500;
+		font-size: 0.75rem;
+		color: var(--color-muted);
+	}
+
+	.fl-tables :global(td.num) {
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.explainer {
+		border-top: 1px solid var(--color-border);
+		padding-top: var(--space-3);
+		max-width: var(--content-width);
+	}
+
+	/* SVG content is injected with set:html / innerHTML, so it can't carry
+	   Astro's scoped-style attributes: style it globally, namespaced fl-. */
+	.fl :global(svg text) {
+		font-family: var(--font-mono);
+	}
+
+	.fl :global(.fl-link) {
+		stroke: var(--color-border);
+		stroke-width: 1.5;
+	}
+
+	.fl :global(.fl-link--malicious) {
+		stroke: var(--color-accent);
+		stroke-width: 2;
+	}
+
+	.fl :global(.fl-link--rejected) {
+		stroke-dasharray: 4 4;
+	}
+
+	.fl :global(.fl-reject-mark line) {
+		stroke: var(--color-accent);
+		stroke-width: 2.5;
+		stroke-linecap: round;
+	}
+
+	.fl :global(.fl-packet) {
+		fill: var(--color-fg);
+	}
+
+	.fl :global(.fl-packet--malicious) {
+		fill: var(--color-accent);
+	}
+
+	.fl :global(.fl-server) {
+		fill: var(--color-surface);
+		stroke: var(--color-fg);
+		stroke-width: 1.5;
+	}
+
+	.fl :global(.fl-server-label) {
+		fill: var(--color-fg);
+		font-size: 12px;
+		font-weight: 600;
+		text-anchor: middle;
+	}
+
+	.fl :global(.fl-server-agg) {
+		fill: var(--color-muted);
+		font-size: 12px;
+		text-anchor: middle;
+	}
+
+	.fl :global(.fl-axis),
+	.fl :global(.fl-grid) {
+		stroke: var(--color-border);
+		stroke-width: 1;
+	}
+
+	.fl :global(.fl-axis-label),
+	.fl :global(.fl-tick),
+	.fl :global(.fl-empty) {
+		fill: var(--color-muted);
+		font-size: 9px;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.fl :global(.fl-empty) {
+		text-anchor: middle;
+		font-size: 10px;
+	}
+
+	.fl :global(.fl-point circle),
+	.fl :global(.fl-point rect) {
+		stroke: var(--color-bg);
+		stroke-width: 2;
+	}
+
+	.fl :global(.fl-point--honest circle) {
+		fill: var(--color-muted);
+	}
+
+	.fl :global(.fl-point--malicious rect) {
+		fill: var(--color-accent);
+	}
+
+	.fl :global(.fl-point--aggregate rect) {
+		fill: var(--color-fg);
+	}
+
+	.fl :global(.fl-point--rejected circle),
+	.fl :global(.fl-point--rejected rect) {
+		fill: var(--color-bg);
+		stroke-width: 2;
+	}
+
+	.fl :global(.fl-point--honest.fl-point--rejected circle) {
+		stroke: var(--color-muted);
+	}
+
+	.fl :global(.fl-point--malicious.fl-point--rejected rect) {
+		stroke: var(--color-accent);
+	}
+
+	.fl :global(.fl-point--active circle),
+	.fl :global(.fl-point--active rect) {
+		stroke: var(--color-fg);
+		stroke-width: 2.5;
+	}
+
+	.fl :global(.fl-point-label) {
+		fill: var(--color-fg);
+		font-size: 9px;
+	}
+
+	.fl :global(.fl-point-label--muted) {
+		fill: var(--color-muted);
+	}
+
+	.fl :global(.fl-line) {
+		fill: none;
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	.fl :global(.fl-line--accuracy) {
+		stroke: var(--color-fg);
+	}
+
+	.fl :global(.fl-line--miss) {
+		stroke: var(--color-accent);
+		stroke-dasharray: 5 4;
+	}
+
+	.fl :global(.fl-end) {
+		stroke: var(--color-bg);
+		stroke-width: 2;
+	}
+
+	.fl :global(.fl-end--accuracy) {
+		fill: var(--color-fg);
+	}
+
+	.fl :global(.fl-end--miss) {
+		fill: var(--color-accent);
+	}
+
+	.fl :global(.fl-end-label) {
+		fill: var(--color-fg);
+		font-size: 10px;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.fl :global(.fl-end-label--muted) {
+		fill: var(--color-muted);
+	}
+
+	.fl :global(.fl-event) {
+		stroke: var(--color-muted);
+		stroke-width: 1;
+		opacity: 0.6;
+	}
+
+	.fl :global(.fl-event-label) {
+		fill: var(--color-muted);
+		font-size: 8.5px;
+	}
+
+	.fl :global(.fl-crosshair-line) {
+		stroke: var(--color-fg);
+		stroke-width: 1;
+		opacity: 0.5;
+	}
+
+	.fl-key-honest {
+		fill: var(--color-muted);
+	}
+
+	.fl-key-attacker {
+		fill: var(--color-accent);
+	}
+
+	.fl-key-rejected {
+		fill: none;
+		stroke: var(--color-muted);
+		stroke-width: 2;
+	}
+
+	.fl-key-aggregate {
+		fill: var(--color-fg);
+	}
+
+	.fl-key-accuracy,
+	.fl-key-miss {
+		stroke-width: 2;
+		stroke-linecap: round;
+	}
+
+	.fl-key-accuracy {
+		stroke: var(--color-fg);
+	}
+
+	.fl-key-miss {
+		stroke: var(--color-accent);
+		stroke-dasharray: 5 4;
+	}
+
+	@media (max-width: 900px) {
+		.fl-layout,
+		.fl-tables {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.fl-round {
+			margin-left: 0;
+			width: 100%;
+		}
+	}
+
+	@media (max-width: 640px) {
+		/* The status sentence changes every round; reserve room for 4 lines so
+		   its wrapping doesn't shove the ring and charts around mid-animation. */
+		.fl-status {
+			min-height: 6.2em;
+		}
+	}
+
+	@media (max-width: 480px) {
+		/* The SVGs scale down with the column; bump their text back up so it
+		   stays readable (roughly 10px on screen instead of 7px). */
+		.fl :global(.fl-tick),
+		.fl :global(.fl-axis-label),
+		.fl :global(.fl-point-label),
+		.fl :global(.fl-end-label),
+		.fl :global(.fl-event-label) {
+			font-size: 12px;
+		}
+
+		.fl-client {
+			width: 2.9rem;
+			height: 2.9rem;
+		}
+
+		.fl-client-sub {
+			display: none;
+		}
+	}
+</style>
