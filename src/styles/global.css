@@ -1,0 +1,50 @@
+/*
+  Placeholder base styles. No visual design has been chosen yet
+  (see Phase 1 design proposal). System font stack and neutral
+  colors only, so pages are readable while content/schemas are
+  built out.
+*/
+
+:root {
+	--color-bg: #ffffff;
+	--color-fg: #1a1a1a;
+	--color-muted: #5c5c5c;
+	--color-accent: #2b5fff;
+	--font-body: system-ui, sans-serif;
+	--font-mono: ui-monospace, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-bg: #12141a;
+		--color-fg: #f0f0f0;
+		--color-muted: #a0a0a8;
+		--color-accent: #6f93ff;
+	}
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	background: var(--color-bg);
+	color: var(--color-fg);
+	font-family: var(--font-body);
+	line-height: 1.5;
+}
+
+a {
+	color: var(--color-accent);
+}
+
+code,
+pre {
+	font-family: var(--font-mono);
+}

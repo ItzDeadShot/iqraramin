@@ -1,0 +1,10 @@
+# Powers the /now page. Single entry, replace items and bump `updated`.
+- id: now
+  updated: 2026-09-25
+  items:
+    - category: "Research"
+      text: "Placeholder: working on federated learning robustness for intrusion detection."
+    - category: "Reading"
+      text: "Placeholder: book or paper currently reading."
+    - category: "Building"
+      text: "Placeholder: current engineering side project."

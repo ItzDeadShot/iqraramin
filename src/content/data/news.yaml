@@ -1,0 +1,9 @@
+# Placeholder news/timeline entries. Replace with real updates.
+- id: placeholder-news-1
+  date: 2025-06-01
+  text: "Placeholder: paper accepted at a high-impact, top-quartile venue."
+  link: "https://example.com/news/placeholder-1"
+
+- id: placeholder-news-2
+  date: 2025-01-15
+  text: "Placeholder: started a new research project on federated intrusion detection."

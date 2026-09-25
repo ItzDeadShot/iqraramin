@@ -1,0 +1,25 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const projects = await getCollection('projects');
+const featured = projects.filter((p) => p.data.featured);
+---
+
+<BaseLayout title="Muhammad Iqrar Amin">
+	<main>
+		<h1>Muhammad Iqrar Amin</h1>
+		<p>Site scaffold in progress. Visual design has not been chosen yet.</p>
+
+		<h2>Featured projects (from content collection)</h2>
+		<ul>
+			{
+				featured.map((project) => (
+					<li>
+						<strong>{project.data.title}</strong> — {project.data.type}, {project.data.year}
+					</li>
+				))
+			}
+		</ul>
+	</main>
+</BaseLayout>

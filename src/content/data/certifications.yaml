@@ -1,0 +1,11 @@
+# Placeholder certification entries. Replace with real credentials.
+- id: placeholder-cert-1
+  name: "Certification Name (placeholder)"
+  issuer: "Issuing Body (placeholder)"
+  date: 2024-06-01
+  credentialUrl: "https://example.com/credential/placeholder-1"
+
+- id: placeholder-cert-2
+  name: "Certification Name (placeholder)"
+  issuer: "Issuing Body (placeholder)"
+  date: 2023-11-15

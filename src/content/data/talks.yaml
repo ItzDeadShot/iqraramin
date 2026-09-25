@@ -1,0 +1,13 @@
+# Placeholder talk entries. Replace with real talks/presentations.
+- id: placeholder-talk-1
+  title: "Federated Learning for Network Security: Placeholder Talk Title"
+  event: "Event Name TBD"
+  date: 2025-03-10
+  location: "City, Country (placeholder)"
+  link: "https://example.com/talk/placeholder-1"
+
+- id: placeholder-talk-2
+  title: "Explainability in Intrusion Detection: Placeholder Talk Title"
+  event: "Event Name TBD"
+  date: 2024-09-05
+  location: "Online"
