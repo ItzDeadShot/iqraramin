@@ -1,0 +1,320 @@
+---
+import { getEntry } from 'astro:content';
+import { PAYLOAD_OFFSET, asciiCell, bioToPayloadText, buildPacket, dissect, type PacketConfig } from '../lib/packet/packet';
+
+interface Props {
+	bio: string[];
+	packet: PacketConfig;
+}
+
+const { bio, packet } = Astro.props;
+const copy = await getEntry('pieces', 'packet-dissector');
+if (!copy) throw new Error('Missing "packet-dissector" entry in src/content/data/pieces.yaml');
+
+const payloadText = bioToPayloadText(bio);
+const frame = buildPacket(packet, payloadText);
+const d = dissect(frame);
+// Fail the build rather than ever publishing a frame that doesn't check out.
+if (!d.ipv4.checksumOk || !d.tcp.checksumOk || d.payloadText !== payloadText) {
+	throw new Error('About-page packet failed verification after build: checksum or payload mismatch.');
+}
+
+const hexByte = (b: number) => b.toString(16).padStart(2, '0');
+const offset = (n: number) => n.toString(16).padStart(4, '0');
+const rows = (width: number) => Array.from({ length: Math.ceil(frame.length / width) }, (_, r) => offset(r * width));
+const byteSummary = (start: number, end: number) => {
+	const count = end - start;
+	const shown = Array.from(frame.subarray(start, Math.min(end, start + 8)), hexByte).join(' ');
+	return ` (bytes ${start} to ${end - 1}, ${count} byte${count === 1 ? '' : 's'}: ${shown}${count > 8 ? ' ...' : ''})`;
+};
+const [frameLayer, ...layers] = d.layers;
+---
+
+<section class="pd" data-component="packet-dissector" data-payload-offset={PAYLOAD_OFFSET} aria-labelledby="pd-title">
+	<header class="pd-header">
+		<p class="mono eyebrow">Interactive research piece</p>
+		<h2 id="pd-title">{copy.data.title}</h2>
+		<p>{copy.data.intro}</p>
+		<p class="mono honesty-note">{copy.data.toyModelNote}</p>
+	</header>
+
+	<div class="pd-panes">
+		<div class="pd-tree mono">
+			<button type="button" class="pd-field pd-field--frame" data-start={frameLayer.start} data-end={frameLayer.end} aria-pressed="false">
+				{frameLayer.summary}<span class="visually-hidden">{byteSummary(frameLayer.start, frameLayer.end)}</span>
+			</button>
+			{
+				layers.map((layer) => (
+					<details class="pd-layer" open data-layer={layer.id}>
+						<summary data-start={layer.start} data-end={layer.end}>
+							{layer.summary}
+						</summary>
+						<ul>
+							{layer.fields.map((f) => (
+								<li>
+									<button type="button" class="pd-field" data-start={f.start} data-end={f.end} aria-pressed="false">
+										{f.label}
+										<span class="visually-hidden">{byteSummary(f.start, f.end)}</span>
+									</button>
+								</li>
+							))}
+						</ul>
+					</details>
+				))
+			}
+		</div>
+
+		<div class="pd-bytes-pane">
+			<div class="pd-hex mono" aria-hidden="true" data-hex>
+				<div class="pd-offsets pd-offsets--16">{rows(16).map((o) => <span>{o}</span>)}</div>
+				<div class="pd-offsets pd-offsets--8">{rows(8).map((o) => <span>{o}</span>)}</div>
+				<div class="pd-cells pd-cells--hex">
+					{Array.from(frame, (b, i) => <span data-i={i} class={i >= PAYLOAD_OFFSET ? 'is-payload' : undefined}>{hexByte(b)}</span>)}
+				</div>
+				<div class="pd-cells pd-cells--ascii">
+					{Array.from(frame, (b, i) => <span data-i={i} class={i >= PAYLOAD_OFFSET ? 'is-payload' : undefined}>{asciiCell(b)}</span>)}
+				</div>
+			</div>
+			<p class="pd-readout mono" aria-hidden="true" data-readout>
+				{frame.length} bytes: {PAYLOAD_OFFSET} of headers, then {frame.length - PAYLOAD_OFFSET} of payload.
+			</p>
+		</div>
+	</div>
+
+	<div class="explainer">
+		<h3>{copy.data.explainerTitle}</h3>
+		<p>{copy.data.explainerBody}</p>
+	</div>
+</section>
+
+<script>
+	import { initDissector } from '../lib/packet/dissector-client';
+
+	const root = document.querySelector<HTMLElement>('[data-component="packet-dissector"]');
+	if (root) {
+		const boot = () => initDissector(root, document.querySelector<HTMLElement>('[data-bio]'));
+		// Vanilla-TS equivalent of client:visible.
+		if ('IntersectionObserver' in window) {
+			const observer = new IntersectionObserver((entries, obs) => {
+				if (entries.some((e) => e.isIntersecting)) {
+					obs.disconnect();
+					boot();
+				}
+			});
+			observer.observe(root);
+		} else {
+			boot();
+		}
+	}
+</script>
+
+<style>
+	.pd {
+		max-width: 68rem;
+		margin: 0 auto;
+		padding: var(--space-5) var(--space-3);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.pd-header > * {
+		max-width: var(--content-width);
+	}
+
+	.eyebrow {
+		color: var(--color-accent);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		font-size: 0.75rem;
+		margin: 0 0 var(--space-2);
+	}
+
+	.honesty-note {
+		color: var(--color-muted);
+		font-size: 0.8rem;
+	}
+
+	.pd-panes {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-4);
+		align-items: start;
+	}
+
+	@media (min-width: 1100px) {
+		.pd-panes {
+			grid-template-columns: minmax(0, 1fr) auto;
+		}
+	}
+
+	.pd-tree {
+		font-size: 0.8rem;
+		border: 1px solid var(--color-border);
+		background: var(--color-surface);
+		padding: var(--space-2);
+		min-width: 0;
+	}
+
+	.pd-tree ul {
+		list-style: none;
+		margin: 0;
+		padding: 0 0 var(--space-1) 1.4rem;
+	}
+
+	/* 24px minimum target size (WCAG 2.2, 2.5.8) for every tree row. */
+	.pd-layer summary {
+		cursor: pointer;
+		padding: 2px var(--space-1);
+		min-height: 24px;
+		font-weight: 600;
+	}
+
+	.pd-field {
+		display: block;
+		width: 100%;
+		text-align: left;
+		font: inherit;
+		color: inherit;
+		background: transparent;
+		border: 0;
+		padding: 2px var(--space-1);
+		min-height: 24px;
+		cursor: pointer;
+		overflow-wrap: anywhere;
+	}
+
+	.pd-field--frame {
+		font-weight: 600;
+		padding-left: calc(var(--space-1) + 1em);
+	}
+
+	.pd-field:hover,
+	.pd-layer summary:hover,
+	.pd-tree :global(.is-active) {
+		background: var(--color-accent);
+		color: var(--color-accent-ink);
+	}
+
+	.pd-field[aria-pressed='true'] {
+		outline: 1.5px solid var(--color-accent);
+		outline-offset: -1.5px;
+	}
+
+	.pd-bytes-pane {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		min-width: 0;
+	}
+
+	.pd-hex {
+		display: grid;
+		grid-template-columns: auto auto auto;
+		column-gap: 1ch;
+		font-size: 0.85rem;
+		line-height: 1.6;
+		border: 1px solid var(--color-border);
+		padding: var(--space-2) var(--space-3);
+		width: max-content;
+		max-width: 100%;
+		overflow-x: auto;
+	}
+
+	.pd-offsets {
+		display: grid;
+		color: var(--color-muted);
+	}
+
+	.pd-offsets--8 {
+		display: none;
+	}
+
+	.pd-cells {
+		display: grid;
+		align-content: start;
+	}
+
+	/* No column gap: each cell carries its own half-space of padding, so a
+	   multi-byte selection highlights as one continuous block. */
+	.pd-cells--hex {
+		grid-template-columns: repeat(16, 3ch);
+	}
+
+	.pd-cells--hex span {
+		text-align: center;
+	}
+
+	.pd-cells--ascii {
+		grid-template-columns: repeat(16, 1ch);
+	}
+
+	.pd-cells span {
+		cursor: default;
+	}
+
+	/* Same specificity on purpose, so the later .is-active rule always wins
+	   (an earlier :not() variant out-ranked it and left muted text on red). */
+	.pd-cells span {
+		color: var(--color-muted);
+	}
+
+	.pd-cells span.is-payload {
+		color: var(--color-fg);
+	}
+
+	.pd-cells :global(span.is-active) {
+		background: var(--color-accent);
+		color: var(--color-accent-ink);
+	}
+
+	/* The readout changes on every hover, so it must never change layout:
+	   width 0 / min-width 100% keeps it from widening its column (which
+	   re-wrapped the tree, moved the row under the pointer, and fed back into
+	   a hover loop), and a fixed 2-line box keeps its height constant. */
+	.pd-readout {
+		margin: 0;
+		font-size: 0.8rem;
+		line-height: 1.5;
+		color: var(--color-muted);
+		width: 0;
+		min-width: 100%;
+		height: 3em;
+		overflow: hidden;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+	}
+
+	.explainer {
+		border-top: 1px solid var(--color-border);
+		padding-top: var(--space-3);
+		max-width: var(--content-width);
+	}
+
+	@media (max-width: 640px) {
+		.pd-offsets--16 {
+			display: none;
+		}
+
+		.pd-offsets--8 {
+			display: grid;
+		}
+
+		.pd-cells--hex {
+			grid-template-columns: repeat(8, 3ch);
+		}
+
+		.pd-cells--ascii {
+			grid-template-columns: repeat(8, 1ch);
+		}
+	}
+
+	/* The bio paragraphs live outside this component; the CSS Custom
+	   Highlight API marks the hovered word in them without touching the DOM. */
+	:global(::highlight(pd-bio)) {
+		background-color: var(--color-accent);
+		color: var(--color-accent-ink);
+	}
+</style>

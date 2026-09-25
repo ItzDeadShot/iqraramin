@@ -31,3 +31,16 @@
     a robust aggregation rule and watch whether the server catches it.
   explainerTitle: "Why this matters"
   explainerBody: "TODO(Q): write the real explanation here."
+
+- id: packet-dissector
+  title: "This bio, on the wire"
+  toyModelNote: >
+    Real bytes: a valid Ethernet II / IPv4 / TCP frame assembled when this
+    site was built, with both checksums computed and then verified by
+    parsing the frame back. It was never actually sent anywhere.
+  intro: >
+    The text above is also the payload of the frame below, shown the way a
+    packet analyzer like Wireshark would. Hover or focus a field to see its
+    bytes; hover the bytes to find the field, or the word, they belong to.
+  explainerTitle: "Why a packet"
+  explainerBody: "TODO(Q): write the real explanation here."

@@ -1,0 +1,33 @@
+---
+import { getEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PacketDissector from '../components/PacketDissector.astro';
+
+const about = await getEntry('about', 'about');
+if (!about) throw new Error('Missing "about" entry in src/content/data/about.yaml');
+---
+
+<BaseLayout title="About | Muhammad Iqrar Amin" description={about.data.bio[1] ?? about.data.bio[0]}>
+	<main>
+		<article class="about">
+			<h1>About</h1>
+			<div class="bio" data-bio>
+				{about.data.bio.map((paragraph) => <p data-bio-paragraph>{paragraph}</p>)}
+			</div>
+		</article>
+		<PacketDissector bio={about.data.bio} packet={about.data.packet} />
+	</main>
+</BaseLayout>
+
+<style>
+	.about {
+		max-width: 68rem;
+		margin: 0 auto;
+		padding: var(--space-5) var(--space-3) 0;
+	}
+
+	.bio {
+		max-width: var(--content-width);
+		font-size: 1.1rem;
+	}
+</style>

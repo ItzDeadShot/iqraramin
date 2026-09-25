@@ -39,8 +39,9 @@ the site updates without touching components.
 
 ## Pages
 Home, About, Research (publications), Projects (filterable), Blog,
-Certifications, Now, Contact, 404. Only `index.astro` exists so far
-(Phase 1 sanity check, not final design).
+Certifications, Now, Contact, 404. Built so far: Home (Piece 1 hero),
+About (bio + Piece 3), Research (Piece 2; the publications list itself is
+not built yet).
 
 ## Design direction
 Chosen and implemented: **Case File** (dossier / redacted-report
@@ -55,8 +56,7 @@ cards), status shown as a rotated bordered "stamp." Light/dark via
 toggle (not built yet). Both self-hosted fonts are OFL-licensed, see
 `public/fonts/LICENSE.md`. Contrast-checked: every text/background pairing
 in both themes clears WCAG AA (4.79:1 to 15.5:1). `BaseLayout.astro` has a
-minimal site nav (Home, Research only, since those are the only pages that
-exist so far).
+minimal site nav listing only pages that exist (Home, About, Research).
 
 ## Security touches (not yet added)
 - `/.well-known/security.txt`
@@ -207,7 +207,38 @@ Build order and status:
    the status line, and font-swap shift via font preloads; a global
    `[hidden] { display: none !important }` rule now backs the hidden
    attribute). Explainer body is still `TODO(Q):`.
-4. Piece 3, packet dissector bio (About).
+4. **Piece 3, packet dissector** - done, on `/about`
+   (`src/components/PacketDissector.astro`, bytes in `src/lib/packet/packet.ts`,
+   interaction in `src/lib/packet/dissector-client.ts`). Bio paragraphs and
+   every header value (MACs, IPs, ports, TTL, IP ID, seq/ack, TCP flags,
+   window) come from `src/content/data/about.yaml`, schema-validated in the
+   `about` collection. `buildPacket` assembles Ethernet II / IPv4 / TCP with
+   RFC 1071 checksums (IP header, TCP with pseudo-header); `dissect` parses
+   bytes back into the tree independently, so every tree value and every
+   "[correct]" comes from the bytes, and the build throws if the frame
+   ever fails verification. Also cross-checked once with an independent
+   Python parser against the built page's bytes. No FCS (as in captures).
+   Values use RFC 5737 documentation IPs and locally administered MACs.
+   UI: collapsible `<details>` tree (works without JS), hex + ASCII panes
+   (`aria-hidden`; each tree button carries its byte offsets and hex in
+   visually hidden text instead), hover/focus previews, click pins (Escape
+   clears), a byte hover lights its narrowest field(s), a payload byte
+   lights its whole word in hex, ASCII and the bio paragraph itself via
+   the CSS Custom Highlight API (no DOM changes to the bio text). 16 bytes
+   per row, 8 at <=640px. The bio's first paragraph is an explicit
+   `TODO(Q):` draft notice (the bio is copy for Q to write); the explainer
+   body is `TODO(Q):` too.
+   Verified: 15 packet tests (RFC 1071 and a known IPv4 header checksum,
+   round trip, corruption detection per field, UTF-8, MTU limit, bad
+   addresses); headless-Chromium runs of hover/focus/pin/collapse, mobile
+   8-byte rows, no-JS render; Lighthouse 100/100/100/100 on `/about`
+   (DOM-size diagnostic flags ~1,600 elements from the per-byte cells; TBT
+   stays 0ms). JS 1.7KB gzip.
+   **Site-wide fix found here**: Astro inlines scripts under Vite's 4KB
+   `assetsInlineLimit`, which the CSP (`script-src 'self'`) then blocks;
+   Pieces 1/2 only worked because their scripts were bigger.
+   `astro.config.mjs` now sets `vite.build.assetsInlineLimit: 0`; keep it,
+   and check new pages ship no inline `<script>`.
 5. Piece 4, MITRE ATT&CK coverage matrix (`/coverage`, standalone page).
 6. Piece 5, hidden flags (sitewide + `/flags`).
 7. Piece 6, "You are the traffic" (`/whoami`).

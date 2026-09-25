@@ -1,0 +1,45 @@
+# About page. The bio below becomes the payload of a real Ethernet II /
+# IPv4 / TCP frame at build time (src/components/PacketDissector.astro), and
+# every header value comes from `packet`. Edit anything here and the next
+# build regenerates the bytes and both checksums. The bio has to fit in one
+# TCP segment: at most 1460 bytes of UTF-8, paragraphs joined by a blank line.
+
+- id: about
+  bio:
+    - >-
+      TODO(Q): this bio is a draft assembled from your project brief. Rewrite
+      it in your own words.
+    - >-
+      I'm Muhammad Iqrar Amin, though most people call me Q. I'm a
+      cybersecurity researcher, engineer, and software developer.
+    - >-
+      My research sits where machine learning meets network defense:
+      federated learning, intrusion detection systems, deep learning
+      ensembles, and explainable AI. I'm interested in detectors that
+      organizations can train together without pooling their traffic, and in
+      models that can show their work when they raise an alert.
+    - >-
+      This text is the payload of a real TCP segment. Hover the bytes below
+      to find it.
+  packet:
+    ethernet:
+      # Locally administered unicast MACs (second-lowest bit of the first
+      # octet set), so they can't collide with a real vendor's address.
+      src: "de:ad:be:ef:13:37"
+      dst: "02:c0:ff:ee:00:01"
+    ipv4:
+      # RFC 5737 documentation ranges: guaranteed never to route anywhere.
+      src: "192.0.2.13"
+      dst: "198.51.100.7"
+      ttl: 64
+      identification: 0x1337
+      dscp: 0
+      dontFragment: true
+    tcp:
+      srcPort: 31337
+      dstPort: 443
+      seq: 1337
+      ack: 1
+      flags: [PSH, ACK]
+      window: 64240
+      urgentPointer: 0
