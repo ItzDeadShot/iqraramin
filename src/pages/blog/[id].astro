@@ -9,19 +9,32 @@ export async function getStaticPaths() {
 
 const { post } = Astro.props;
 const { Content } = await render(post);
-const date = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }).format(post.data.date);
+const date = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }).format(post.data.date);
 ---
 
 <BaseLayout title={`${post.data.title} | Muhammad Iqrar Amin`} description={post.data.summary}>
 	<main class="post">
-		<header>
+		<header class="post-header">
 			<p class="mono meta">
+				<a href="/blog/">Blog</a>
+				<span aria-hidden="true">/</span>
 				<time datetime={post.data.date.toISOString().slice(0, 10)}>{date}</time>
-				{post.data.tags.length > 0 && <span> · {post.data.tags.join(', ')}</span>}
 			</p>
 			<h1>{post.data.title}</h1>
+			{
+				post.data.tags.length > 0 && (
+					<ul class="tags mono" aria-label="Tags">
+						{post.data.tags.map((t) => (
+							<li>{t}</li>
+						))}
+					</ul>
+				)
+			}
 		</header>
-		<Content />
+		<article class="prose">
+			<Content />
+		</article>
+		<p class="post-footer mono"><a href="/blog/">All posts</a></p>
 	</main>
 </BaseLayout>
 
@@ -32,17 +45,44 @@ const date = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'long', 
 		padding: var(--space-5) var(--space-3);
 	}
 
-	.post > :global(*) {
+	.post-header {
 		max-width: var(--content-width);
+		margin-bottom: var(--space-4);
 	}
 
 	.meta {
+		display: flex;
+		gap: var(--space-2);
 		margin: 0 0 var(--space-2);
 		font-size: 0.8rem;
 		color: var(--color-muted);
 	}
 
 	.post h1 {
-		margin-top: 0;
+		margin: 0 0 var(--space-3);
+	}
+
+	.tags {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+		font-size: 0.75rem;
+	}
+
+	.tags li {
+		padding: 0 var(--space-1);
+		border: 1px solid var(--color-border);
+		color: var(--color-muted);
+	}
+
+	.post-footer {
+		margin: var(--space-5) 0 0;
+		padding-top: var(--space-2);
+		border-top: 2px solid var(--color-fg);
+		max-width: var(--content-width);
+		font-size: 0.85rem;
 	}
 </style>

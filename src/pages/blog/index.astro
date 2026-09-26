@@ -1,0 +1,118 @@
+---
+import { getCollection, getEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const copy = await getEntry('copy', 'blog');
+if (!copy) throw new Error('Missing "blog" entry in src/content/data/copy.yaml');
+const posts = (await getCollection('blog', (p) => !p.data.draft)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const dateFmt = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+---
+
+<BaseLayout title="Blog | Muhammad Iqrar Amin" description={copy.data.lead}>
+	<main class="blog">
+		<header class="blog-header">
+			<h1>{copy.data.title}</h1>
+			<p class="lead">{copy.data.lead}</p>
+		</header>
+		{
+			posts.length > 0 ? (
+				<ol class="entries">
+					{posts.map((post) => (
+						<li class="entry">
+							<time class="mono" datetime={post.data.date.toISOString().slice(0, 10)}>
+								{dateFmt.format(post.data.date)}
+							</time>
+							<h2>
+								<a href={`/blog/${post.id}/`}>{post.data.title}</a>
+							</h2>
+							<p>{post.data.summary}</p>
+							{post.data.tags.length > 0 && (
+								<ul class="tags mono" aria-label="Tags">
+									{post.data.tags.map((t) => (
+										<li>{t}</li>
+									))}
+								</ul>
+							)}
+						</li>
+					))}
+				</ol>
+			) : (
+				<p class="empty">Nothing published yet.</p>
+			)
+		}
+	</main>
+</BaseLayout>
+
+<style>
+	.blog {
+		max-width: var(--page-width);
+		margin: 0 auto;
+		padding: var(--space-5) var(--space-3);
+	}
+
+	.blog-header,
+	.entries,
+	.empty {
+		max-width: var(--content-width);
+	}
+
+	.blog-header h1 {
+		margin-top: 0;
+	}
+
+	.lead {
+		font-size: 1.15rem;
+		color: var(--color-muted);
+	}
+
+	.entries {
+		list-style: none;
+		margin: var(--space-4) 0 0;
+		padding: 0;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.entry {
+		padding: var(--space-3) 0;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.entry:first-child {
+		border-top: 2px solid var(--color-fg);
+	}
+
+	.entry time {
+		font-size: 0.75rem;
+		color: var(--color-muted);
+	}
+
+	.entry h2 {
+		margin: var(--space-1) 0 var(--space-2);
+		font-size: 1.3rem;
+	}
+
+	.entry p {
+		margin: 0 0 var(--space-2);
+	}
+
+	.tags {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+		font-size: 0.75rem;
+	}
+
+	.tags li {
+		padding: 0 var(--space-1);
+		border: 1px solid var(--color-border);
+		color: var(--color-muted);
+	}
+
+	.empty {
+		color: var(--color-muted);
+		font-style: italic;
+	}
+</style>

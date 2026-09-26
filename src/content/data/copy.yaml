@@ -120,3 +120,9 @@
   lead: >
     Working miniatures of my research: small, real computations you can
     poke at, all running in your browser.
+
+- id: blog
+  title: "Blog"
+  lead: >
+    Problems I have hit and solved, written up as a record: for anyone who
+    runs into the same thing, and for me the next time I do.
