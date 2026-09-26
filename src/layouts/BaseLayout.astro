@@ -2,7 +2,8 @@
 import { getEntry } from 'astro:content';
 import '../styles/global.css';
 import wordmarkFont from '../content/data/wordmark-font.json';
-import { THEME_INIT_SCRIPT, cspHash } from '../lib/theme';
+import { THEME_INIT_SCRIPT } from '../lib/theme';
+import { contentSecurityPolicy } from '../lib/csp';
 
 export interface Props {
 	title: string;
@@ -26,18 +27,7 @@ if (missing.length) {
 	);
 }
 
-const csp = [
-	"default-src 'self'",
-	// The one inline script (theme, before first paint) is allowed by its
-	// exact hash; everything else must still be a same-origin file.
-	`script-src 'self' ${await cspHash(THEME_INIT_SCRIPT)}`,
-	"style-src 'self' 'unsafe-inline'",
-	"img-src 'self' data:",
-	"font-src 'self'",
-	"connect-src 'self'",
-	"base-uri 'self'",
-	"form-action 'self'",
-].join('; ');
+const csp = await contentSecurityPolicy({ header: false });
 ---
 
 <!doctype html>

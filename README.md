@@ -18,10 +18,9 @@ Workers static assets at `https://iqraramin.com`.
 │   ├── layouts/
 │   │   └── BaseLayout.astro
 │   ├── styles/
-│   │   └── global.css        # placeholder, no design chosen yet
-│   └── pages/
-│       └── index.astro
-└── .github/workflows/deploy.yml
+│   │   └── global.css        # design tokens and shared styles
+│   └── pages/                # one file per route; [headers].ts builds _headers
+└── wrangler.jsonc            # Cloudflare deploy config
 ```
 
 ## Local development
@@ -53,7 +52,10 @@ Builds), every push to `main` builds and deploys:
 - Deploy command: `npx wrangler deploy`
 
 The Worker's name in the dashboard must match `name` in `wrangler.jsonc`.
-Unknown paths serve `404.html` with a 404 status.
+Unknown paths serve `404.html` with a 404 status. HTTP security headers
+(CSP, HSTS and friends) come from `dist/_headers`, generated at build time
+from `src/lib/csp.ts`. `npx wrangler dev` serves the built site locally
+with those headers applied.
 
 The canonical URL (canonical links, `security.txt`, `robots.txt`) comes
 from `site` in `astro.config.mjs`.

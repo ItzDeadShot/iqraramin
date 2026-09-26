@@ -10,8 +10,8 @@ certifications, and blog posts.
 ## Goal
 Mostly static, served by Cloudflare Workers static assets at
 `https://iqraramin.com` (`wrangler.jsonc`; `site` in `astro.config.mjs`
-drives canonical URLs, security.txt and robots.txt). A GitHub Pages
-workflow also still exists (`.github/workflows/deploy.yml`). All content comes from data files (YAML/Markdown/BibTeX) so
+drives canonical URLs, security.txt and robots.txt). The old GitHub Pages
+workflow is gone. All content comes from data files (YAML/Markdown/BibTeX) so
 the site updates without touching components.
 
 ## Stack and architecture
@@ -21,9 +21,8 @@ the site updates without touching components.
 - Astro content collections with Zod schemas (`src/content.config.ts`) for
   every content type, so bad data fails the build
 - Deployment: Cloudflare Workers static assets via `wrangler.jsonc`
-  (Workers Builds: `pnpm run build`, then `npx wrangler deploy`). The
-  older GitHub Pages workflow (`.github/workflows/deploy.yml`,
-  `withastro/action`) still runs on push too.
+  (Workers Builds: `pnpm run build`, then `npx wrangler deploy`).
+  `npx wrangler dev` serves `dist/` locally with the real headers applied.
 - No third-party trackers, no external font or script CDNs (self-host fonts)
 - Import `z` from `astro/zod`, not `astro:content` (deprecated in Astro 7,
   removed in Astro 8). Use `z.url()` / `z.email()` etc., not the deprecated
@@ -130,15 +129,23 @@ Blog, Coverage, Flags, Whoami); it wraps on narrow screens.
   `src/pages/.well-known/security.txt.ts`, validated against RFC 9116 on
   every build (Contact, Expires < 1 year, Canonical). Contact comes from
   `securityContact` in `site.yaml`, currently a `TODO(Q):` placeholder
-  (GitHub profile URL). The deploy action uploads dotfiles
-  (`include-hidden-files: true`), so `.well-known` ships.
+  (GitHub profile URL). Wrangler uploads `.well-known` like any other
+  folder (checked with `wrangler dev`).
 - PGP key/fingerprint on Contact page (not yet added)
-- CSP is already in place via a meta tag in `src/layouts/BaseLayout.astro`
-  (`script-src 'self'` plus the theme init script's hash, nothing else
-  inline)
-  (note: `frame-ancestors` is ignored by CSP delivered via meta tag; that
-  directive needs an HTTP header, which isn't available on static Pages
-  hosting without a custom edge/proxy)
+- CSP, one definition in `src/lib/csp.ts` (`script-src 'self'` plus the
+  theme init script's hash, nothing else inline), delivered twice: a meta
+  tag in `BaseLayout.astro` (so any host, and `astro preview`, still gets
+  it) and a real HTTP header via `dist/_headers`, which Cloudflare reads.
+  Only the header carries `frame-ancestors 'none'` (browsers ignore it in
+  a meta tag). `_headers` is generated at build by `src/pages/[headers].ts`
+  (a route file can't start with "_"), so its hash can't drift from the
+  page's. It also sets HSTS (1 year, no includeSubDomains/preload yet),
+  nosniff, X-Frame-Options DENY, Referrer-Policy
+  strict-origin-when-cross-origin, COOP same-origin, a Permissions-Policy
+  turning off unused features, and immutable caching for hashed
+  `/_astro/*` files. Verified under `wrangler dev`: every piece (sandbox
+  worker, evade detector, whoami, flags, theme) runs with no CSP
+  violations, and a cross-origin iframe is refused.
 
 ## Interactive pieces (real, working miniatures, not decorative loops)
 
@@ -375,7 +382,7 @@ Build order and status:
    `pnpm build` runs `scripts/verify-flags.mjs` after `astro build`: it
    hashes every `Q{...}` in dist/ and fails unless each of the six is in
    exactly one file and none is on /flags (negative-tested: a missing flag
-   and a duplicated one both fail the build). withastro/action runs `pnpm
+   and a duplicated one both fail the build). The Cloudflare build runs `pnpm
    run build`, so this runs in CI too.
    Verified: 10 new tests (SHA-256 vectors, matching and normalization,
    hint unlocking, credential lookalikes, security.txt build/validation);
