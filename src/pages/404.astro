@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import NoticePage from '../components/NoticePage.astro';
+import { flagFor } from '../lib/flag-entries';
+
+const flag = await flagFor('not-found');
+---
+
+<BaseLayout title="Not found | Muhammad Iqrar Amin" description="There is no page at this address." noindex>
+	<NoticePage copyId="not-found" stamp="404 / Case file not found" flag={flag} reveal="redacted" />
+</BaseLayout>

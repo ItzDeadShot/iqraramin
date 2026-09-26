@@ -7,6 +7,10 @@
   # fails with instructions if you forget.
   wordmark: "اقرار"
   wordmarkLatin: "Iqrar"
+  # security.txt Contact (RFC 9116 needs a mailto:, https:// or tel: URI).
+  # TODO(Q): placeholder, replace with a real security contact (e.g. a
+  # mailto: address or a disclosure form) before relying on it.
+  securityContact: "https://github.com/ItzDeadShot"
   tagline: >
     Cybersecurity researcher working on federated learning, intrusion
     detection, and explainable AI.

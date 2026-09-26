@@ -1,0 +1,243 @@
+---
+import { getEntry } from 'astro:content';
+import { getFlags } from '../lib/flag-entries';
+import { hintViews, sha256Hex, type FlagSlot } from '../lib/flags';
+
+const copy = await getEntry('copy', 'flags');
+if (!copy) throw new Error('Missing "flags" entry in src/content/data/copy.yaml');
+
+// Only hashes leave the build. The plaintext flags never reach this page.
+const slots: FlagSlot[] = await Promise.all(
+	(await getFlags()).map(async (e) => ({ id: e.id, title: e.data.title, hash: await sha256Hex(e.data.flag), hints: e.data.hints })),
+);
+const json = JSON.stringify({ slots }).replace(/</g, '\\u003c');
+---
+
+<section class="fb" data-component="flag-board">
+	<header class="fb-header">
+		<p class="mono eyebrow">Interactive piece</p>
+		<h1>{copy.data.title}</h1>
+		<p class="fb-lead">{copy.data.lead}</p>
+		{copy.data.paragraphs.map((p) => <p>{p}</p>)}
+	</header>
+
+	<form class="fb-form" data-form novalidate>
+		<label for="fb-input" class="mono">Flag</label>
+		<div class="fb-form-row">
+			<input
+				id="fb-input"
+				name="flag"
+				type="text"
+				placeholder="Q{...}"
+				autocomplete="off"
+				autocapitalize="off"
+				spellcheck="false"
+				data-requires-js
+				disabled
+			/>
+			<button type="submit" data-requires-js disabled>Check</button>
+		</div>
+	</form>
+	<p class="fb-result" data-result aria-live="polite">Checking needs JavaScript, and happens entirely in your browser.</p>
+
+	<p class="fb-progress mono" data-progress>0 of {slots.length} found</p>
+	<ol class="fb-slots">
+		{
+			slots.map((slot) => (
+				<li class="fb-slot" data-slot={slot.id} data-found="false">
+					<p class="fb-status mono" data-status>
+						Unfound
+					</p>
+					<h2>{slot.title}</h2>
+					<p class="fb-found-flag mono" data-found-flag hidden />
+					<ul class="fb-hints" data-hints>
+						{hintViews(slot, 0).map((h) =>
+							h.locked ? (
+								<li class="fb-hint-locked mono">
+									Locked: find {h.remaining} more flag{h.remaining === 1 ? '' : 's'}
+								</li>
+							) : (
+								<li>{h.text}</li>
+							),
+						)}
+					</ul>
+				</li>
+			))
+		}
+	</ol>
+
+	<p class="fb-reset-row">
+		<button type="button" class="fb-reset mono" data-reset data-requires-js disabled>Reset progress</button>
+	</p>
+
+	<script type="application/json" id="fb-data" is:inline set:html={json}></script>
+</section>
+
+<script>
+	import { initFlagBoard } from '../lib/flag-board-client';
+
+	const root = document.querySelector<HTMLElement>('[data-component="flag-board"]');
+	if (root) initFlagBoard(root);
+</script>
+
+<style>
+	.fb {
+		max-width: 60rem;
+		margin: 0 auto;
+		padding: var(--space-5) var(--space-3);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.fb-header > * {
+		max-width: var(--content-width);
+	}
+
+	.eyebrow {
+		color: var(--color-accent);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		font-size: 0.75rem;
+		margin: 0 0 var(--space-2);
+	}
+
+	.fb-header h1 {
+		margin-top: 0;
+	}
+
+	.fb-lead {
+		font-size: 1.15rem;
+	}
+
+	.fb-form {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+		max-width: 36rem;
+	}
+
+	.fb-form label {
+		font-size: 0.75rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.fb-form-row {
+		display: flex;
+		gap: var(--space-2);
+	}
+
+	.fb-form input {
+		flex: 1;
+		min-width: 0;
+		font-family: var(--font-mono);
+		font-size: 1rem;
+		padding: var(--space-2);
+		color: var(--color-fg);
+		background: var(--color-surface);
+		border: 1.5px solid var(--color-fg);
+	}
+
+	.fb-form button,
+	.fb-reset {
+		font-family: var(--font-mono);
+		font-size: 0.85rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		padding: var(--space-2) var(--space-3);
+		min-height: 2.5rem;
+		color: var(--color-fg);
+		background: transparent;
+		border: 1.5px solid var(--color-fg);
+		cursor: pointer;
+	}
+
+	.fb-form button:disabled,
+	.fb-form input:disabled,
+	.fb-reset:disabled {
+		opacity: 0.5;
+		cursor: default;
+	}
+
+	.fb-result {
+		margin: 0;
+		min-height: 1.6em;
+	}
+
+	.fb-progress {
+		margin: 0;
+		font-size: 0.9rem;
+	}
+
+	.fb-slots {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+		gap: var(--space-3);
+	}
+
+	.fb-slot {
+		border: 1px solid var(--color-border);
+		background: var(--color-surface);
+		padding: var(--space-3);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.fb-slot[data-found='true'] {
+		border: 1.5px solid var(--color-fg);
+	}
+
+	.fb-slot h2 {
+		font-size: 1.1rem;
+		margin: 0;
+	}
+
+	/* Found is shown by the stamp's text and border, not by color alone. */
+	.fb-status {
+		align-self: flex-start;
+		margin: 0;
+		padding: 1px var(--space-2);
+		font-size: 0.75rem;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+		border: 1.5px dashed var(--color-border);
+	}
+
+	.fb-slot[data-found='true'] .fb-status {
+		color: var(--color-accent);
+		border: 2px solid var(--color-accent);
+		transform: rotate(-2deg);
+	}
+
+	.fb-found-flag {
+		margin: 0;
+		font-weight: 600;
+		overflow-wrap: anywhere;
+	}
+
+	.fb-hints {
+		margin: 0;
+		padding-left: 1.1rem;
+		font-size: 0.9rem;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.fb-hints :global(.fb-hint-locked),
+	.fb-hint-locked {
+		color: var(--color-muted);
+		font-size: 0.8rem;
+	}
+
+	.fb-reset-row {
+		margin: 0;
+	}
+</style>

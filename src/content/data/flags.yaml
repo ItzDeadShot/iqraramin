@@ -1,0 +1,70 @@
+# The site's capture-the-flag, all in one place. Each flag is planted at its
+# `location` at build time; the /flags page only ever receives SHA-256
+# hashes. Yes, the plaintext is right here in a public repo: reading the
+# source is a legitimate technique, and the /flags page says so.
+#
+# Flags must match Q{lowercase_words_digits} and must never resemble a real
+# credential (the schema rejects token-shaped strings, since GitHub secret
+# scanning would too). `after` is how many flags must be found before a
+# hint unlocks. After a build, scripts/verify-flags.mjs checks every flag is
+# present in the output exactly once and never leaks onto /flags.
+
+- id: polite-robot
+  location: robots
+  flag: "Q{robots_txt_is_a_map_not_a_lock}"
+  title: "The polite robot"
+  hints:
+    - after: 0
+      text: "Crawlers are asked, politely, to stay out of some places."
+    - after: 2
+      text: "robots.txt lists a path it would rather nobody visited."
+
+- id: console
+  location: console
+  flag: "Q{hello_from_the_devtools_side}"
+  title: "Talking to developers"
+  hints:
+    - after: 0
+      text: "Some messages are only for people who open the developer tools."
+    - after: 2
+      text: "Open your browser's console on any page."
+
+- id: between-the-tags
+  location: html-comment
+  flag: "Q{view_source_never_gets_old}"
+  title: "Between the tags"
+  hints:
+    - after: 0
+      text: "Not everything in a page is meant to be rendered."
+    - after: 2
+      text: "View the source of the About page."
+
+- id: disclosure
+  location: security-txt
+  flag: "Q{thanks_for_reading_rfc_9116}"
+  title: "Responsible disclosure"
+  hints:
+    - after: 0
+      text: "There is a standard place to learn how to report a vulnerability here."
+    - after: 2
+      text: "It lives under /.well-known/."
+
+- id: legacy-login
+  location: honeypot
+  flag: "Q{no_wordpress_only_static_bytes}"
+  title: "Legacy login"
+  hints:
+    - after: 0
+      text: "Bots try the same few admin paths on every site they find."
+    - after: 2
+      text: "The most famous CMS login path of them all."
+
+- id: nowhere
+  location: not-found
+  flag: "Q{lost_and_found_in_the_404}"
+  title: "Nowhere"
+  hints:
+    - after: 0
+      text: "Sometimes the quickest way to find something is to get lost."
+    - after: 2
+      text: "Visit a page that doesn't exist, then look closer."

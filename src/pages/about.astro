@@ -2,13 +2,17 @@
 import { getEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PacketDissector from '../components/PacketDissector.astro';
+import { flagFor } from '../lib/flag-entries';
 
 const about = await getEntry('about', 'about');
 if (!about) throw new Error('Missing "about" entry in src/content/data/about.yaml');
+// Only visible in the page source.
+const sourceComment = `<!-- Field note for whoever reads source: ${await flagFor('html-comment')} -->`;
 ---
 
 <BaseLayout title="About | Muhammad Iqrar Amin" description={about.data.bio[1] ?? about.data.bio[0]}>
 	<main>
+		<Fragment set:html={sourceComment} />
 		<article class="about">
 			<h1>About</h1>
 			<div class="bio" data-bio>

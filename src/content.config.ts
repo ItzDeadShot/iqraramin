@@ -6,6 +6,7 @@ import attackData from './content/data/attack/enterprise.json';
 // .bib file invalidates this config and re-runs the loader.
 import publicationsBib from './content/data/publications.bib?raw';
 import { cleanValue, parseAttackField, parseBibtex } from './lib/bibtex';
+import { FLAG_LOCATIONS, FLAG_PATTERN, looksLikeSecret } from './lib/flags';
 
 const ATTACK_IDS = new Set([...attackData.techniques.map((t) => t[0] as string), ...attackData.subtechniques.map((s) => s[0])]);
 
@@ -165,6 +166,7 @@ const site = defineCollection({
 		tagline: z.string(),
 		wordmark: z.string().min(1),
 		wordmarkLatin: z.string().min(1),
+		securityContact: z.string().regex(/^(mailto:|https:\/\/|tel:)/, 'security.txt Contact must be a mailto:, https:// or tel: URI'),
 	}),
 });
 
@@ -201,4 +203,28 @@ const about = defineCollection({
 	}),
 });
 
-export const collections = { projects, publications, blog, certifications, talks, news, now, pieces, site, about };
+const flags = defineCollection({
+	loader: file('./src/content/data/flags.yaml'),
+	schema: z.object({
+		id: z.string(),
+		location: z.enum(FLAG_LOCATIONS),
+		flag: z
+			.string()
+			.regex(FLAG_PATTERN, 'Flags look like Q{lowercase_words_and_digits}')
+			.refine((f) => !looksLikeSecret(f), 'This flag looks like a real credential; scanners would flag it. Use plain words.'),
+		title: z.string(),
+		hints: z.array(z.object({ after: z.number().int().min(0).max(5), text: z.string() })).min(1),
+	}),
+});
+
+const copy = defineCollection({
+	loader: file('./src/content/data/copy.yaml'),
+	schema: z.object({
+		id: z.string(),
+		title: z.string(),
+		lead: z.string(),
+		paragraphs: z.array(z.string()).default([]),
+	}),
+});
+
+export const collections = { projects, publications, blog, certifications, talks, news, now, pieces, site, about, flags, copy };

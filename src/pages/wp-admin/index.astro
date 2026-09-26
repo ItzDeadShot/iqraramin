@@ -1,0 +1,13 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import NoticePage from '../../components/NoticePage.astro';
+import { flagFor } from '../../lib/flag-entries';
+
+// A friendly honeypot: no form, no inputs, nothing recorded. Just a static
+// page for the scanners (and curious people) that try /wp-admin/.
+const flag = await flagFor('honeypot');
+---
+
+<BaseLayout title="wp-admin | Muhammad Iqrar Amin" description="There is no WordPress here." noindex>
+	<NoticePage copyId="honeypot" stamp="Honeypot" flag={flag} reveal="open" />
+</BaseLayout>

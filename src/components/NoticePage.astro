@@ -1,0 +1,147 @@
+---
+import { getEntry } from 'astro:content';
+
+interface Props {
+	copyId: string;
+	stamp: string;
+	flag: string;
+	/** "open" shows the flag; "redacted" hides it behind a declassify toggle. */
+	reveal: 'open' | 'redacted';
+}
+
+const { copyId, stamp, flag, reveal } = Astro.props;
+const copy = await getEntry('copy', copyId);
+if (!copy) throw new Error(`Missing "${copyId}" entry in src/content/data/copy.yaml`);
+---
+
+<main class="notice">
+	<p class="notice-stamp mono">{stamp}</p>
+	<h1>{copy.data.title}</h1>
+	<p class="notice-lead">{copy.data.lead}</p>
+	{copy.data.paragraphs.map((p) => <p>{p}</p>)}
+
+	{
+		reveal === 'open' ? (
+			<p class="notice-flag mono">
+				<span class="notice-flag-label">Flag</span>
+				<code>{flag}</code>
+			</p>
+		) : (
+			<details class="notice-redacted">
+				<summary class="mono">
+					<span class="redaction-bar" aria-hidden="true" /> Declassify
+				</summary>
+				<p class="notice-flag mono">
+					<span class="notice-flag-label">Flag</span>
+					<code>{flag}</code>
+				</p>
+			</details>
+		)
+	}
+
+	<p class="notice-links mono">
+		<a href="/flags">Submit it on the scoreboard</a>
+		<a href="/">Back to the home page</a>
+	</p>
+</main>
+
+<style>
+	.notice {
+		max-width: var(--content-width);
+		margin: 0 auto;
+		padding: var(--space-6) var(--space-3);
+	}
+
+	.notice-stamp {
+		display: inline-block;
+		margin: 0 0 var(--space-3);
+		padding: var(--space-1) var(--space-2);
+		border: 2px solid var(--color-accent);
+		color: var(--color-accent);
+		font-size: 0.85rem;
+		font-weight: 600;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		transform: rotate(-2deg);
+	}
+
+	.notice h1 {
+		font-size: clamp(2rem, 5vw, 3rem);
+		margin: 0 0 var(--space-3);
+	}
+
+	.notice-lead {
+		font-size: 1.15rem;
+	}
+
+	.notice-flag {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+		margin: var(--space-4) 0;
+		padding: var(--space-3);
+		border: 1.5px dashed var(--color-fg);
+		background: var(--color-surface);
+		overflow-wrap: anywhere;
+	}
+
+	.notice-flag-label {
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.notice-flag code {
+		font-size: 1rem;
+		font-weight: 600;
+	}
+
+	.notice-redacted {
+		margin: var(--space-4) 0;
+	}
+
+	.notice-redacted summary {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: 2.5rem;
+		padding: var(--space-1) var(--space-3);
+		cursor: pointer;
+		background: var(--color-fg);
+		color: var(--color-bg);
+		font-size: 0.85rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		list-style: none;
+	}
+
+	.redaction-bar {
+		display: inline-block;
+		width: 9rem;
+		height: 0.8em;
+		background: var(--color-bg);
+	}
+
+	.notice-redacted[open] .redaction-bar {
+		background: var(--color-border);
+	}
+
+	.notice-redacted summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.notice-redacted[open] summary {
+		background: transparent;
+		color: var(--color-muted);
+		border: 1px solid var(--color-border);
+	}
+
+	.notice-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2) var(--space-4);
+		font-size: 0.85rem;
+	}
+</style>

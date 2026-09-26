@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import NoticePage from '../../components/NoticePage.astro';
+import { flagFor } from '../../lib/flag-entries';
+
+// The page robots.txt disallows (see src/pages/robots.txt.ts).
+const flag = await flagFor('robots');
+---
+
+<BaseLayout title="Field notes | Muhammad Iqrar Amin" description="Where robots.txt asked crawlers not to go." noindex>
+	<NoticePage copyId="field-notes" stamp="Disallowed" flag={flag} reveal="open" />
+</BaseLayout>

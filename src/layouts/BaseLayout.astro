@@ -6,9 +6,11 @@ import wordmarkFont from '../content/data/wordmark-font.json';
 export interface Props {
 	title: string;
 	description?: string;
+	/** Keep search engines from indexing easter-egg pages. */
+	noindex?: boolean;
 }
 
-const { title, description = 'Personal site of Muhammad Iqrar Amin (Q).' } = Astro.props;
+const { title, description = 'Personal site of Muhammad Iqrar Amin (Q).', noindex = false } = Astro.props;
 
 const site = await getEntry('site', 'site');
 if (!site) throw new Error('Missing "site" entry in src/content/data/site.yaml');
@@ -43,12 +45,14 @@ const csp = [
 		<meta http-equiv="Content-Security-Policy" content={csp} />
 		<meta name="generator" content={Astro.generator} />
 		<meta name="description" content={description} />
+		{noindex && <meta name="robots" content="noindex" />}
 		<link rel="preload" href="/fonts/fraunces-variable.woff2" as="font" type="font/woff2" crossorigin />
 		<link rel="preload" href="/fonts/jetbrains-mono-variable.woff2" as="font" type="font/woff2" crossorigin />
 		<link rel="preload" href={wordmarkFont.file} as="font" type="font/woff2" crossorigin />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
 		<title>{title}</title>
+		<script is:inline src="/js/hello.js" defer></script>
 	</head>
 	<body>
 		<header class="site-header">
@@ -61,6 +65,7 @@ const csp = [
 				<a href="/about">About</a>
 				<a href="/research">Research</a>
 				<a href="/coverage">Coverage</a>
+				<a href="/flags">Flags</a>
 			</nav>
 		</header>
 		<slot />

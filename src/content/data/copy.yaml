@@ -1,0 +1,43 @@
+# Page copy for the small pages that aren't pieces or collections of their
+# own: the flags scoreboard, the 404 page, the /wp-admin/ honeypot, and the
+# page robots.txt points at.
+
+- id: flags
+  title: "Capture the flags"
+  lead: >
+    Six flags are hidden around this site, each shaped like Q{...}. Paste
+    one below to check it. Hints unlock as you find more.
+  paragraphs:
+    - >
+      Reading this site's public source on GitHub is a completely
+      legitimate technique; real researchers read source too. The flags are
+      sitting in a data file there. Finding them live is more fun, but a
+      flag is a flag.
+    - >
+      Checking happens entirely in your browser: each guess is hashed with
+      SHA-256 and compared against the six hashes on this page. Nothing is
+      sent anywhere, and your progress is kept only in this browser's local
+      storage.
+
+- id: not-found
+  title: "Case file not found"
+  lead: "There is no page at this address. It may have moved, or it never existed."
+  paragraphs:
+    - "The rest of the file is redacted, but you are cleared to open it."
+
+- id: honeypot
+  title: "There is no WordPress here"
+  lead: >
+    You found /wp-admin/, the path every scanner on the internet tries
+    first. This site is plain static files: no admin panel, no database, no
+    login, and nothing on this page records that you came by.
+  paragraphs:
+    - "Curiosity deserves a reward, though."
+
+- id: field-notes
+  title: "Field notes"
+  lead: >
+    robots.txt asked crawlers not to come here. A Disallow line is a
+    request, not a lock, and it tells humans exactly where to look.
+  paragraphs:
+    - "Which is why nothing secret should ever be listed there."
