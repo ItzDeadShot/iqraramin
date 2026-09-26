@@ -62,6 +62,12 @@ Astro's built-in Shiki (no extra dependency) with dual themes
 dark colors under the site's own dark rules, the page surface replaces the
 themes' backgrounds, and a tiny transformer in `astro.config.mjs` darkens
 the one light-theme comment grey that failed AA on the paper surface.
+Posts with 3+ sections get an "On this page" contents list
+(`src/components/blog/TableOfContents.astro`, nesting from `buildToc` in
+`src/lib/toc.ts`: h2s with their h3s): a sticky column right of the
+reading measure at >= 64rem, a collapsed `<details>` above the post below
+that. No JS; only one variant is ever displayed. "Back to top" uses the
+spec's `#top`.
 When importing a post: drop its Markdown H1 (the page renders the
 frontmatter title), and reword em-dashes (site rule), changing nothing
 else.

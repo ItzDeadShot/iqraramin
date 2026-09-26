@@ -1,6 +1,8 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import TableOfContents from '../../components/blog/TableOfContents.astro';
+import { buildToc } from '../../lib/toc';
 
 export async function getStaticPaths() {
 	const posts = await getCollection('blog', (p) => !p.data.draft);
@@ -8,7 +10,10 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
+const toc = buildToc(headings);
+// A contents list only earns its space once a post has a few sections.
+const showToc = toc.length >= 3;
 const date = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }).format(post.data.date);
 ---
 
@@ -31,9 +36,25 @@ const date = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', 
 				)
 			}
 		</header>
-		<article class="prose">
-			<Content />
-		</article>
+		{
+			showToc && (
+				<div class="toc-inline-wrap">
+					<TableOfContents toc={toc} variant="inline" />
+				</div>
+			)
+		}
+		<div class:list={['post-body', { 'has-toc': showToc }]}>
+			{
+				showToc && (
+					<div class="toc-aside-wrap">
+						<TableOfContents toc={toc} variant="aside" />
+					</div>
+				)
+			}
+			<article class="prose">
+				<Content />
+			</article>
+		</div>
 		<p class="post-footer mono"><a href="/blog/">All posts</a></p>
 	</main>
 </BaseLayout>
@@ -76,6 +97,39 @@ const date = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', 
 		padding: 0 var(--space-1);
 		border: 1px solid var(--color-border);
 		color: var(--color-muted);
+	}
+
+	/* Narrow screens: collapsible contents above the post. Wide screens: a
+	   sticky column in the space right of the reading measure. Only one of
+	   the two is ever displayed, so assistive tech never hears both. */
+	.toc-inline-wrap {
+		max-width: var(--content-width);
+		margin-bottom: var(--space-4);
+	}
+
+	.toc-aside-wrap {
+		display: none;
+	}
+
+	@media (min-width: 64rem) {
+		.toc-inline-wrap {
+			display: none;
+		}
+
+		.post-body.has-toc {
+			display: grid;
+			grid-template-columns: minmax(0, var(--content-width)) minmax(0, 1fr);
+			column-gap: var(--space-6);
+			align-items: start;
+		}
+
+		/* Stretches to the article's height so the nav inside can stick. */
+		.toc-aside-wrap {
+			display: block;
+			grid-column: 2;
+			grid-row: 1;
+			align-self: stretch;
+		}
 	}
 
 	.post-footer {

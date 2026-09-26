@@ -177,6 +177,12 @@ pre,
 	font-size: 1.15rem;
 }
 
+/* Contents links land with a little air above the heading. */
+.prose h2,
+.prose h3 {
+	scroll-margin-top: var(--space-4);
+}
+
 .prose ul,
 .prose ol {
 	padding-left: 1.3rem;
