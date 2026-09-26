@@ -19,10 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
+      # v6 runs Node 24 (Astro 7 needs >= 22.12; v3 ran Node 20 and the
+      # build failed), reads pnpm's version from packageManager, runs
+      # `pnpm run build` (so verify-flags runs in CI), and uploads hidden
+      # files so .well-known/security.txt ships.
       - name: Install, build, and upload
-        uses: withastro/action@v3
+        uses: withastro/action@v6
 
   deploy:
     needs: build
@@ -33,4 +37,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
