@@ -1,8 +1,10 @@
-# Placeholder news/timeline entries. Replace with real updates.
-- id: placeholder-news-1
-  date: 2025-06-01
-  text: "Placeholder: paper accepted at a high-impact, top-quartile venue."
-  link: "https://example.com/news/placeholder-1"
+# News/timeline entries, shown newest first under "Recently" on the home
+# page. Only month and year are displayed, so use the 1st when the day
+# doesn't matter.
+- id: hdse-ids-connection-science
+  date: 2026-02-01
+  text: "Paper on HDSE-IDS, a heterogeneous deep stacked ensemble for cross-domain intrusion detection, accepted in Connection Science."
+  link: "https://doi.org/10.1080/09540091.2025.2599708"
 
 - id: placeholder-news-2
   date: 2025-01-15
