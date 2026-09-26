@@ -31,8 +31,18 @@ the site updates without touching components.
   {repo,paper,demo}, featured, summary, optional body)
 - `src/content/blog/`: Markdown posts (title, date, tags, draft, summary)
 - `src/content/data/publications.bib`: single source of truth for
-  publications, parsed at build time (Phase 2: citation-js, not yet added,
-  ask before adding)
+  publications. Loaded into the `publications` collection by a custom
+  loader using the site's own small, strict BibTeX reader
+  (`src/lib/bibtex.ts`: braced/quoted/numeric fields, nested braces, errors
+  with line numbers; rejects @string macros and `#` concatenation). The
+  .bib is imported as `?raw` text through Vite (no Node fs / @types/node).
+  Citation *formatting* for a publications page is still open (citation-js
+  was the earlier idea; ask before adding).
+- ATT&CK links: projects (frontmatter `attack: [{ id: T1046, relation:
+  detects }]`) and publications (BibTeX `attack = {T1046:detects, ...}`)
+  share one Zod rule in `content.config.ts` that checks each ID against the
+  pinned ATT&CK release; relation is detects | mitigates | studies. The
+  current mappings are placeholders marked `TODO(Q):`.
 - `src/content/data/certifications.yaml`, `talks.yaml`, `news.yaml`,
   `now.yaml`: `file()` loader collections. Each entry needs a unique `id`
   field for the loader.
@@ -41,7 +51,7 @@ the site updates without touching components.
 Home, About, Research (publications), Projects (filterable), Blog,
 Certifications, Now, Contact, 404. Built so far: Home (Piece 1 hero),
 About (bio + Piece 3), Research (Piece 2; the publications list itself is
-not built yet).
+not built yet), Coverage (Piece 4).
 
 ## Design direction
 Chosen and implemented: **Case File** (dossier / redacted-report
@@ -56,7 +66,8 @@ cards), status shown as a rotated bordered "stamp." Light/dark via
 toggle (not built yet). Both self-hosted fonts are OFL-licensed, see
 `public/fonts/LICENSE.md`. Contrast-checked: every text/background pairing
 in both themes clears WCAG AA (4.79:1 to 15.5:1). `BaseLayout.astro` has a
-minimal site nav listing only pages that exist (Home, About, Research).
+minimal site nav listing only pages that exist (Home, About, Research,
+Coverage).
 
 ## Security touches (not yet added)
 - `/.well-known/security.txt`
@@ -239,7 +250,43 @@ Build order and status:
    Pieces 1/2 only worked because their scripts were bigger.
    `astro.config.mjs` now sets `vite.build.assetsInlineLimit: 0`; keep it,
    and check new pages ship no inline `<script>`.
-5. Piece 4, MITRE ATT&CK coverage matrix (`/coverage`, standalone page).
+5. **Piece 4, ATT&CK coverage matrix** - done, on `/coverage`
+   (`src/components/AttackMatrix.astro`, logic in `src/lib/attack/matrix.ts`,
+   filters/detail in `src/lib/attack/matrix-client.ts`).
+   `scripts/prepare_attack_data.py` (stdlib only) reduces the pinned
+   Enterprise ATT&CK v19.2 STIX bundle (URL + SHA-256 pinned, fails on
+   mismatch; revoked/deprecated objects dropped) to
+   `src/content/data/attack/enterprise.json` (30KB: 15 tactics in matrix
+   order, 222 techniques, 475 sub-techniques). v19 splits Defense Evasion
+   into Stealth and Defense Impairment; nothing hardcodes tactics.
+   Matrix is built at build time; sub-technique claims roll up to the
+   parent cell (the detail panel says "via T1110.001 ..."); techniques
+   appear under every tactic they belong to. Intensity = distinct works
+   (1 / 2 / 3+) as ink tinted 10/20/32% into the surface, with full-ink
+   text only (muted text fails AA on the darker fills) plus the count
+   printed in the cell; relation = D/M/S letter badges with solid / double
+   / dashed borders (never color alone). Default view shows covered
+   techniques only; "Show the full matrix" is a visually hidden checkbox
+   driving CSS `:has()`, so it works without JS (full view scrolls
+   sideways). Filters by relation and work type (projects' research /
+   engineering / tool, plus publication) re-count cells, the summary, the
+   detail panel and the table. Detail panel lists each work with type,
+   year, relation and its links (projects have no pages yet, so it links
+   Paper/Code/Demo, or DOI for papers, else "No public link yet"). A table
+   view mirrors everything. Client data ships as a non-executed
+   `application/json` block. MITRE's required attribution plus a
+   trademark / no-endorsement line sit in the footer.
+   Verified: a typo (T9999) or revoked ID (T1086) in a project, and a
+   malformed BibTeX `attack` item, each fail the build with a message
+   naming the entry and ID; adding a tag moved a cell from level 0 to 1
+   with no component change. 18 new tests (BibTeX reader incl. the real
+   file, matrix roll-up, counts, filters, the pinned release). Browser runs
+   of filters, detail, keyboard, Escape, full view with JS and without,
+   light/dark, mobile (no overflow). Lighthouse 100/100/100/100 (DOM-size
+   diagnostic only, 254 pre-rendered cells). JS 1.8KB gzip.
+   Deviation: the secure-aggregation toolkit has no mapping on purpose;
+   ML-poisoning defenses belong to MITRE ATLAS, not Enterprise ATT&CK.
+   Explainer body is `TODO(Q):`.
 6. Piece 5, hidden flags (sitewide + `/flags`).
 7. Piece 6, "You are the traffic" (`/whoami`).
 

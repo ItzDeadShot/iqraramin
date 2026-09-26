@@ -1,0 +1,666 @@
+---
+import { getCollection, getEntry } from 'astro:content';
+import { ATTACK } from '../lib/attack/data';
+import {
+	RELATIONS,
+	WORK_TYPES,
+	buildMatrix,
+	intensityLevel,
+	relationCounts,
+	techniqueIndex,
+	techniqueUrl,
+	workCount,
+	type Work,
+} from '../lib/attack/matrix';
+
+const copy = await getEntry('pieces', 'attack-coverage');
+if (!copy) throw new Error('Missing "attack-coverage" entry in src/content/data/pieces.yaml');
+
+const projects = await getCollection('projects');
+const publications = await getCollection('publications');
+
+const works: Work[] = [
+	...projects.map((p) => ({
+		key: `project:${p.id}`,
+		title: p.data.title,
+		type: p.data.type,
+		year: p.data.year,
+		links: [
+			p.data.links.paper && { label: 'Paper', url: p.data.links.paper },
+			p.data.links.repo && { label: 'Code', url: p.data.links.repo },
+			p.data.links.demo && { label: 'Demo', url: p.data.links.demo },
+		].filter((l): l is { label: string; url: string } => Boolean(l)),
+		attack: p.data.attack,
+	})),
+	...publications.map((p) => ({
+		key: `publication:${p.id}`,
+		title: p.data.title,
+		type: 'publication' as const,
+		year: p.data.year,
+		links: [
+			p.data.doi && { label: 'DOI', url: `https://doi.org/${p.data.doi}` },
+			p.data.url && { label: 'Link', url: p.data.url },
+		].filter((l): l is { label: string; url: string } => Boolean(l)),
+		attack: p.data.attack,
+	})),
+].sort((a, b) => b.year - a.year || a.title.localeCompare(b.title));
+
+const matrix = buildMatrix(ATTACK, works);
+const index = techniqueIndex(ATTACK);
+const worksByKey = new Map(works.map((w) => [w.key, w]));
+
+// Everything the client needs to re-filter and fill the detail panel,
+// shipped as a JSON data block (not executed, so the CSP is unaffected).
+const coveredCells = new Map(matrix.flatMap((col) => col.cells).filter((c) => c.coverage.length).map((c) => [c.id, c]));
+const tacticNames = (id: string) =>
+	matrix.filter((col) => col.cells.some((c) => c.id === id)).map((col) => col.tactic.name);
+const clientData = {
+	works,
+	cells: Object.fromEntries(
+		[...coveredCells].map(([id, cell]) => [id, { name: cell.name, url: techniqueUrl(id), tactics: tacticNames(id), coverage: cell.coverage }]),
+	),
+	subNames: Object.fromEntries(
+		[...coveredCells.values()].flatMap((c) => c.coverage).filter((c) => c.via.includes('.')).map((c) => [c.via, index.nameOf(c.via)]),
+	),
+};
+const json = JSON.stringify(clientData).replace(/</g, '\\u003c');
+
+const totalWorks = new Set([...coveredCells.values()].flatMap((c) => c.coverage.map((x) => x.workKey))).size;
+const coveredTactics = matrix.filter((col) => col.cells.some((c) => c.coverage.length)).length;
+const relationLetter = { detects: 'D', mitigates: 'M', studies: 'S' } as const;
+const typeLabel = { research: 'Research', engineering: 'Engineering', tool: 'Tool', publication: 'Publication' } as const;
+const tableRows = [...coveredCells.values()]
+	.flatMap((cell) =>
+		cell.coverage.map((c) => ({ cell, c, work: worksByKey.get(c.workKey)! })),
+	)
+	.sort((a, b) => a.cell.id.localeCompare(b.cell.id) || a.work.title.localeCompare(b.work.title));
+---
+
+<section class="cov" data-component="attack-coverage">
+	<header class="cov-header">
+		<p class="mono eyebrow">Interactive research piece</p>
+		<h1>{copy.data.title}</h1>
+		<p>{copy.data.intro}</p>
+		<p class="mono honesty-note">{copy.data.toyModelNote} Enterprise ATT&CK v{ATTACK.version}.</p>
+	</header>
+
+	<input type="checkbox" id="cov-full" class="visually-hidden cov-full-toggle" />
+	<div class="cov-controls">
+		<fieldset>
+			<legend class="mono">Relation</legend>
+			{
+				RELATIONS.map((r) => (
+					<label>
+						<input type="checkbox" name="cov-relation" value={r} checked data-requires-js disabled />
+						<span class="badge mono" data-relation={r}>{relationLetter[r]}</span> {r}
+					</label>
+				))
+			}
+		</fieldset>
+		<fieldset>
+			<legend class="mono">Work type</legend>
+			{
+				WORK_TYPES.map((t) => (
+					<label>
+						<input type="checkbox" name="cov-type" value={t} checked data-requires-js disabled /> {typeLabel[t]}
+					</label>
+				))
+			}
+		</fieldset>
+		<fieldset>
+			<legend class="mono">View</legend>
+			<label for="cov-full" class="cov-full-label">
+				<span class="cov-switch" aria-hidden="true"></span> Show the full matrix ({ATTACK.techniques.length} techniques)
+			</label>
+		</fieldset>
+	</div>
+
+	<p class="cov-summary" data-summary aria-live="polite">
+		{coveredCells.size} techniques across {coveredTactics} of {ATTACK.tactics.length} tactics, from {totalWorks} works.
+	</p>
+
+	<ul class="cov-legend mono" aria-label="Legend">
+		<li><span class="swatch" data-level="1"></span>1 work</li>
+		<li><span class="swatch" data-level="2"></span>2 works</li>
+		<li><span class="swatch" data-level="3"></span>3 or more</li>
+		{RELATIONS.map((r) => <li><span class="badge" data-relation={r}>{relationLetter[r]}</span>{r}</li>)}
+	</ul>
+
+	<div class="cov-body">
+		<div class="cov-scroll" tabindex="0" role="region" aria-label="ATT&CK matrix (scrolls sideways in the full view)">
+			<div class="cov-matrix">
+				{
+					matrix.map((col) => {
+						const covered = col.cells.filter((c) => c.coverage.length).length;
+						return (
+							<section class="cov-col" data-tactic={col.tactic.shortname} data-covered-count={covered} aria-labelledby={`tac-${col.tactic.id}`}>
+								<h2 class="cov-col-head" id={`tac-${col.tactic.id}`}>
+									<span>{col.tactic.name}</span>
+									<span class="mono cov-col-count" data-col-count>
+										{covered} of {col.cells.length}
+									</span>
+								</h2>
+								<ul>
+									{col.cells.map((cell) => {
+										const count = workCount(cell.coverage);
+										const rel = relationCounts(cell.coverage);
+										return count ? (
+											<li class="cov-cell" data-technique={cell.id} data-level={intensityLevel(count)}>
+												<button type="button" aria-controls="cov-detail" aria-pressed="false" data-requires-js disabled>
+													<span class="cov-name">{cell.name}</span>
+													<span class="cov-meta mono">
+														<span>{cell.id}</span>
+														<span data-count>{count} {count === 1 ? 'work' : 'works'}</span>
+													</span>
+													<span class="cov-badges mono" data-badges>
+														{RELATIONS.filter((r) => rel[r] > 0).map((r) => (
+															<span class="badge" data-relation={r}>
+																{relationLetter[r]}
+																{rel[r]}
+															</span>
+														))}
+													</span>
+												</button>
+											</li>
+										) : (
+											<li class="cov-cell" data-technique={cell.id} data-level="0">
+												<span class="cov-name">{cell.name}</span>
+												<span class="cov-meta mono">
+													<span>{cell.id}</span>
+												</span>
+											</li>
+										);
+									})}
+								</ul>
+							</section>
+						);
+					})
+				}
+			</div>
+		</div>
+
+		<aside class="cov-detail" id="cov-detail" aria-live="polite" data-detail>
+			<p class="cov-detail-empty">Select a covered technique to see the work behind it.</p>
+		</aside>
+	</div>
+
+	<details class="cov-table-wrap">
+		<summary class="mono">Coverage as a table ({tableRows.length} links)</summary>
+		<div class="cov-table-scroll">
+			<table class="cov-table">
+				<thead>
+					<tr><th scope="col">Technique</th><th scope="col">Tactics</th><th scope="col">Work</th><th scope="col">Type</th><th scope="col">Relation</th></tr>
+				</thead>
+				<tbody>
+					{
+						tableRows.map(({ cell, c, work }) => (
+							<tr data-row data-relation={c.relation} data-type={work.type}>
+								<td>
+									<a href={techniqueUrl(c.via)}>{c.via}</a> {c.via === cell.id ? cell.name : `${index.nameOf(c.via)} (${cell.name})`}
+								</td>
+								<td>{tacticNames(cell.id).join(', ')}</td>
+								<td>{work.title} ({work.year})</td>
+								<td>{typeLabel[work.type]}</td>
+								<td>{c.relation}</td>
+							</tr>
+						))
+					}
+				</tbody>
+			</table>
+		</div>
+	</details>
+
+	<div class="explainer">
+		<h2>{copy.data.explainerTitle}</h2>
+		<p>{copy.data.explainerBody}</p>
+	</div>
+
+	<p class="cov-attribution mono">
+		Technique data from <a href={`https://attack.mitre.org/versions/v${ATTACK.version.split('.')[0]}/`}>MITRE ATT&CK</a> Enterprise v{ATTACK.version}.{' '}
+		{ATTACK.attribution}{' '}{ATTACK.trademark}
+	</p>
+
+	<script type="application/json" id="cov-data" is:inline set:html={json}></script>
+</section>
+
+<script>
+	import { initCoverage } from '../lib/attack/matrix-client';
+
+	const root = document.querySelector<HTMLElement>('[data-component="attack-coverage"]');
+	if (root) initCoverage(root);
+</script>
+
+<style>
+	.cov {
+		max-width: 76rem;
+		margin: 0 auto;
+		padding: var(--space-5) var(--space-3);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.cov-header > * {
+		max-width: var(--content-width);
+	}
+
+	.cov-header h1 {
+		margin-top: 0;
+	}
+
+	.eyebrow {
+		color: var(--color-accent);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		font-size: 0.75rem;
+		margin: 0 0 var(--space-2);
+	}
+
+	.honesty-note {
+		color: var(--color-muted);
+		font-size: 0.8rem;
+	}
+
+	/* ------------------------------------------------ controls */
+
+	.cov-controls {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3) var(--space-5);
+		padding: var(--space-3);
+		border: 1px solid var(--color-border);
+		background: var(--color-surface);
+	}
+
+	.cov-controls fieldset {
+		border: 0;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1) var(--space-3);
+	}
+
+	.cov-controls legend {
+		width: 100%;
+		padding: 0;
+		margin-bottom: var(--space-1);
+		font-size: 0.75rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.cov-controls label {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		min-height: 24px;
+		cursor: pointer;
+	}
+
+	.cov-controls input {
+		accent-color: var(--color-fg);
+	}
+
+	/* The full-matrix switch is a real checkbox (visually hidden) driving CSS
+	   via :has(), so it works with JavaScript off too. */
+	.cov-switch {
+		width: 2rem;
+		height: 1.1rem;
+		border: 1.5px solid var(--color-fg);
+		position: relative;
+		flex: none;
+	}
+
+	.cov-switch::after {
+		content: '';
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 0.7rem;
+		height: 0.7rem;
+		background: var(--color-fg);
+		transition: transform 0.15s ease;
+	}
+
+	.cov:has(.cov-full-toggle:checked) .cov-switch::after {
+		transform: translateX(0.85rem);
+	}
+
+	.cov:has(.cov-full-toggle:focus-visible) .cov-switch {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
+	}
+
+	.cov-summary {
+		margin: 0;
+		font-size: 1rem;
+	}
+
+	/* ------------------------------------------------ legend + badges */
+
+	.cov-legend {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1) var(--space-4);
+		font-size: 0.8rem;
+		color: var(--color-muted);
+	}
+
+	.cov-legend li {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	.swatch {
+		width: 1rem;
+		height: 1rem;
+		border: 1px solid var(--color-border);
+	}
+
+	/* Intensity: ink tinted into the paper. Text on every level is full ink
+	   (contrast-checked: >= 5.4:1 in both themes); muted text would fail. */
+	[data-level='1'] {
+		--fill: color-mix(in srgb, var(--color-fg) 10%, var(--color-surface));
+	}
+
+	[data-level='2'] {
+		--fill: color-mix(in srgb, var(--color-fg) 20%, var(--color-surface));
+	}
+
+	[data-level='3'] {
+		--fill: color-mix(in srgb, var(--color-fg) 32%, var(--color-surface));
+	}
+
+	.swatch {
+		background: var(--fill);
+	}
+
+	/* Relation is carried by the letter (D / M / S) and a border style, never
+	   by color alone. Global within .cov: the filters and the detail panel
+	   create badges in JS, which don't carry Astro's scoped-style attribute. */
+	.cov :global(.badge) {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.4rem;
+		padding: 0 3px;
+		font-size: 0.75rem;
+		font-weight: 600;
+		line-height: 1.3;
+		color: var(--color-fg);
+		border: 1.5px solid var(--color-fg);
+	}
+
+	.cov :global(.badge[data-relation='mitigates']) {
+		border-style: double;
+		border-width: 3px;
+	}
+
+	.cov :global(.badge[data-relation='studies']) {
+		border-style: dashed;
+	}
+
+	/* ------------------------------------------------ matrix */
+
+	.cov-body {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 20rem;
+		gap: var(--space-4);
+		align-items: start;
+	}
+
+	.cov-scroll {
+		overflow-x: auto;
+		min-width: 0;
+	}
+
+	.cov-matrix {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+		gap: var(--space-3);
+	}
+
+	.cov-col {
+		min-width: 0;
+	}
+
+	/* Coverage view: only tactics and techniques that have work behind them. */
+	.cov-col[data-covered-count='0'],
+	.cov-cell[data-level='0'] {
+		display: none;
+	}
+
+	/* Full view: every tactic as a column, side by side, scrolling sideways. */
+	.cov:has(.cov-full-toggle:checked) .cov-matrix {
+		grid-template-columns: none;
+		grid-auto-flow: column;
+		grid-auto-columns: 11rem;
+	}
+
+	.cov:has(.cov-full-toggle:checked) .cov-col[data-covered-count='0'],
+	.cov:has(.cov-full-toggle:checked) .cov-cell[data-level='0'] {
+		display: block;
+	}
+
+	.cov-col-head {
+		font-size: 0.9rem;
+		margin: 0 0 var(--space-2);
+		padding-bottom: var(--space-1);
+		border-bottom: 2px solid var(--color-fg);
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.cov-col-count {
+		font-size: 0.75rem;
+		font-weight: 400;
+		color: var(--color-muted);
+	}
+
+	.cov-col ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+	}
+
+	.cov-cell {
+		font-size: 0.8rem;
+		line-height: 1.3;
+	}
+
+	.cov-cell[data-level='0']:not(:has(button)) {
+		padding: var(--space-1) var(--space-2);
+		border: 1px solid var(--color-border);
+		color: var(--color-muted);
+	}
+
+	/* A covered technique whose works are all filtered out. */
+	.cov-cell[data-level='0'] button {
+		border-color: var(--color-border);
+		font-weight: 400;
+	}
+
+	.cov-cell button {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		width: 100%;
+		min-height: 24px;
+		text-align: left;
+		font: inherit;
+		color: var(--color-fg);
+		background: var(--fill);
+		border: 1.5px solid var(--color-fg);
+		padding: var(--space-1) var(--space-2);
+		cursor: pointer;
+	}
+
+	.cov-cell button:disabled {
+		cursor: default;
+	}
+
+	.cov-cell button[aria-pressed='true'] {
+		outline: 3px solid var(--color-accent);
+		outline-offset: 1px;
+	}
+
+	.cov-name {
+		font-weight: 600;
+	}
+
+	.cov-cell[data-level='0'] .cov-name {
+		font-weight: 400;
+	}
+
+	.cov-meta {
+		display: flex;
+		justify-content: space-between;
+		gap: var(--space-2);
+		font-size: 0.75rem;
+	}
+
+	.cov-badges {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 3px;
+	}
+
+	/* ------------------------------------------------ detail panel */
+
+	.cov-detail {
+		position: sticky;
+		top: var(--space-3);
+		border: 1px solid var(--color-border);
+		background: var(--color-surface);
+		padding: var(--space-3);
+		font-size: 0.9rem;
+	}
+
+	.cov-detail-empty {
+		margin: 0;
+		color: var(--color-muted);
+	}
+
+	.cov-detail :global(h2) {
+		font-size: 1.1rem;
+		margin: 0 0 var(--space-1);
+	}
+
+	.cov-detail :global(.detail-meta) {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--color-muted);
+		margin: 0 0 var(--space-3);
+	}
+
+	.cov-detail :global(ul) {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	.cov-detail :global(li) {
+		border-top: 1px solid var(--color-border);
+		padding-top: var(--space-2);
+	}
+
+	.cov-detail :global(.work-title) {
+		font-weight: 600;
+		display: block;
+	}
+
+	.cov-detail :global(.work-meta) {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--color-muted);
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1) var(--space-2);
+		margin-top: 2px;
+	}
+
+	.cov-detail :global(.work-links) {
+		display: flex;
+		gap: var(--space-3);
+		margin-top: var(--space-1);
+		font-size: 0.8rem;
+	}
+
+	/* ------------------------------------------------ table + footer */
+
+	.cov-table-wrap summary {
+		cursor: pointer;
+		font-size: 0.8rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.cov-table-scroll {
+		overflow-x: auto;
+		margin-top: var(--space-3);
+	}
+
+	.cov-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.85rem;
+	}
+
+	.cov-table th,
+	.cov-table td {
+		text-align: left;
+		vertical-align: top;
+		padding: var(--space-1) var(--space-3) var(--space-1) 0;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.cov-table th {
+		font-family: var(--font-mono);
+		font-weight: 500;
+		font-size: 0.75rem;
+		color: var(--color-muted);
+	}
+
+	.explainer {
+		border-top: 1px solid var(--color-border);
+		padding-top: var(--space-3);
+		max-width: var(--content-width);
+	}
+
+	.explainer h2 {
+		font-size: 1.2rem;
+	}
+
+	.cov-attribution {
+		font-size: 0.8rem;
+		color: var(--color-muted);
+		border-top: 1px solid var(--color-border);
+		padding-top: var(--space-2);
+		margin: 0;
+	}
+
+	@media (max-width: 900px) {
+		.cov-body {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.cov-detail {
+			position: static;
+		}
+	}
+</style>

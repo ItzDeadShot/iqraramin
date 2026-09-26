@@ -44,3 +44,16 @@
     bytes; hover the bytes to find the field, or the word, they belong to.
   explainerTitle: "Why a packet"
   explainerBody: "TODO(Q): write the real explanation here."
+
+- id: attack-coverage
+  title: "ATT&CK coverage"
+  toyModelNote: >
+    The mappings are my own reading of what each project or paper detects,
+    mitigates, or studies. They are not an assessment by MITRE.
+  intro: >
+    Where my projects and papers sit on the MITRE ATT&CK Enterprise matrix.
+    Each cell is a technique; a darker cell means more of my work touches
+    it, and the letters say how: D detects, M mitigates, S studies. Select
+    a technique to see the work behind it.
+  explainerTitle: "Why map research to ATT&CK"
+  explainerBody: "TODO(Q): write the real explanation here."
