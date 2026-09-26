@@ -93,8 +93,16 @@ headings, JetBrains Mono (self-hosted, `public/fonts/jetbrains-mono-variable.wof
 for metadata; cool stone-grey paper background, stamp-red accent reserved
 for flagged/malicious state and status labels; sharp corners (no rounded
 cards), status shown as a rotated bordered "stamp." Light/dark via
-`prefers-color-scheme` plus a `[data-theme]` override hook for a future
-toggle (not built yet). Both self-hosted fonts are OFL-licensed, see
+`prefers-color-scheme`, overridable by the nav's theme toggle through
+`<html data-theme>`. The toggle (`src/lib/theme.ts`,
+`theme-toggle-client.ts`) stores a choice in localStorage
+(`q-site-theme`) only when it differs from the system, so toggling back
+returns to following the system. A one-line inline head script applies it
+before first paint (no flash) and sets `data-js`, which shows the button
+from the first frame (hidden without JS, no layout shift); the CSP allows
+that script by its SHA-256, computed at build time from the same string
+(`cspHash`). Any new color rule must go through the tokens so it follows
+both the media query and `[data-theme]`. Both self-hosted fonts are OFL-licensed, see
 `public/fonts/LICENSE.md`. Contrast-checked: every text/background pairing
 in both themes clears WCAG AA (4.79:1 to 15.5:1). Layout: one page frame,
 `--page-width` (68rem), shared by the header and every page's outer
@@ -122,6 +130,8 @@ Blog, Coverage, Flags, Whoami); it wraps on narrow screens.
   (`include-hidden-files: true`), so `.well-known` ships.
 - PGP key/fingerprint on Contact page (not yet added)
 - CSP is already in place via a meta tag in `src/layouts/BaseLayout.astro`
+  (`script-src 'self'` plus the theme init script's hash, nothing else
+  inline)
   (note: `frame-ancestors` is ignored by CSP delivered via meta tag; that
   directive needs an HTTP header, which isn't available on static Pages
   hosting without a custom edge/proxy)

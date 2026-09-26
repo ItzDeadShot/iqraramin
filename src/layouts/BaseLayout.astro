@@ -2,6 +2,7 @@
 import { getEntry } from 'astro:content';
 import '../styles/global.css';
 import wordmarkFont from '../content/data/wordmark-font.json';
+import { THEME_INIT_SCRIPT, cspHash } from '../lib/theme';
 
 export interface Props {
 	title: string;
@@ -27,7 +28,9 @@ if (missing.length) {
 
 const csp = [
 	"default-src 'self'",
-	"script-src 'self'",
+	// The one inline script (theme, before first paint) is allowed by its
+	// exact hash; everything else must still be a same-origin file.
+	`script-src 'self' ${await cspHash(THEME_INIT_SCRIPT)}`,
 	"style-src 'self' 'unsafe-inline'",
 	"img-src 'self' data:",
 	"font-src 'self'",
@@ -43,6 +46,7 @@ const csp = [
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta http-equiv="Content-Security-Policy" content={csp} />
+		<script is:inline set:html={THEME_INIT_SCRIPT}></script>
 		<meta name="generator" content={Astro.generator} />
 		<meta name="description" content={description} />
 		{noindex && <meta name="robots" content="noindex" />}
@@ -68,11 +72,32 @@ const csp = [
 				<a href="/coverage">Coverage</a>
 				<a href="/flags">Flags</a>
 				<a href="/whoami">Whoami</a>
+				<button type="button" class="theme-toggle" data-theme-toggle aria-pressed="false">
+					<svg class="icon-sun" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+						<circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="1.8"></circle>
+						<path
+							d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"
+							stroke="currentColor"
+							stroke-width="1.8"
+							stroke-linecap="round"></path>
+					</svg>
+					<svg class="icon-moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+						<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z" fill="currentColor"></path>
+					</svg>
+					<span class="visually-hidden">Dark theme</span>
+				</button>
 			</nav>
 		</header>
 		<slot />
 	</body>
 </html>
+
+<script>
+	import { initThemeToggle } from '../lib/theme-toggle-client';
+
+	const button = document.querySelector<HTMLButtonElement>('[data-theme-toggle]');
+	if (button) initThemeToggle(button);
+</script>
 
 <style>
 	.site-header {
@@ -116,7 +141,11 @@ const csp = [
 		}
 	}
 
+	/* 24px-tall targets, so wrapped rows keep WCAG 2.2 target spacing. */
 	.site-nav a {
+		display: inline-flex;
+		align-items: center;
+		min-height: 24px;
 		font-family: var(--font-mono);
 		font-size: 0.8rem;
 		letter-spacing: 0.06em;
@@ -127,5 +156,43 @@ const csp = [
 
 	.site-nav a:hover {
 		color: var(--color-accent);
+	}
+
+	.site-nav {
+		align-items: center;
+	}
+
+	/* Shown only with JS (data-js is set by the inline head script, so it is
+	   there from the first frame and the nav never shifts). */
+	.theme-toggle {
+		display: none;
+		align-items: center;
+		justify-content: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		padding: 0;
+		color: var(--color-muted);
+		background: transparent;
+		border: 1px solid var(--color-border);
+		cursor: pointer;
+	}
+
+	:global(:root[data-js]) .theme-toggle {
+		display: inline-flex;
+	}
+
+	.theme-toggle:hover {
+		color: var(--color-accent);
+		border-color: currentColor;
+	}
+
+	/* The icon shows the theme in use: moon when dark, sun when light. */
+	.icon-moon,
+	.theme-toggle[aria-pressed='true'] .icon-sun {
+		display: none;
+	}
+
+	.theme-toggle[aria-pressed='true'] .icon-moon {
+		display: block;
 	}
 </style>
