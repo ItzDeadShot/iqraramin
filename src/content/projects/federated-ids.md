@@ -2,7 +2,7 @@
 title: "Federated Learning for Cross-Silo Intrusion Detection"
 type: research
 status: active
-year: 2025
+year: 2026
 tags: [federated-learning, intrusion-detection, privacy]
 links:
   paper: "https://example.com/placeholder-paper-federated-ids"

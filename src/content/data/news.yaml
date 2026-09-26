@@ -3,7 +3,7 @@
 # doesn't matter.
 - id: hdse-ids-connection-science
   date: 2026-02-01
-  text: "Paper on HDSE-IDS, a heterogeneous deep stacked ensemble for cross-domain intrusion detection, accepted in Connection Science."
+  text: "Paper on HDSE-IDS accepted in Connection Science."
   link: "https://doi.org/10.1080/09540091.2025.2599708"
 
 - id: placeholder-news-2
