@@ -1,10 +1,9 @@
-# itzdeadshot.github.io
+# iqraramin.com
 
 Personal profile site for Muhammad Iqrar Amin (Q): cybersecurity research,
 engineering projects, publications, and writing. Built with Astro, static
-output, content-driven (Markdown/YAML/BibTeX), deployed to GitHub Pages.
-
-Status: Phase 1 (scaffold). No visual design has been chosen yet.
+output, content-driven (Markdown/YAML/BibTeX), served by Cloudflare
+Workers static assets at `https://iqraramin.com`.
 
 ## Project structure
 
@@ -43,20 +42,18 @@ Every collection has a Zod schema in `src/content.config.ts`, so a
 malformed entry fails `pnpm build` with a specific error instead of
 silently breaking a page.
 
-## Deploying (GitHub Pages)
+## Deploying (Cloudflare)
 
-Deployment is automated: `.github/workflows/deploy.yml` builds with
-`withastro/action` and deploys via `actions/deploy-pages` on every push to
-`main`.
+`wrangler.jsonc` deploys the built `dist/` folder as Cloudflare Workers
+static assets (no Worker script) and attaches the `iqraramin.com` custom
+domain. With the repo connected in the Cloudflare dashboard (Workers
+Builds), every push to `main` builds and deploys:
 
-One-time setup in the GitHub repo settings (only needs doing once):
+- Build command: `pnpm run build` (also runs `scripts/verify-flags.mjs`)
+- Deploy command: `npx wrangler deploy`
 
-1. Go to **Settings → Pages**.
-2. Under **Build and deployment → Source**, select **GitHub Actions**
-   (not "Deploy from a branch").
-3. Push to `main`. The **Deploy to GitHub Pages** workflow will run and
-   publish the site at `https://itzdeadshot.github.io`.
+The Worker's name in the dashboard must match `name` in `wrangler.jsonc`.
+Unknown paths serve `404.html` with a 404 status.
 
-No secrets or tokens need to be configured manually; the workflow uses the
-repo's built-in `GITHUB_TOKEN` via the `pages: write` / `id-token: write`
-permissions already declared in the workflow file.
+The canonical URL (canonical links, `security.txt`, `robots.txt`) comes
+from `site` in `astro.config.mjs`.

@@ -1,0 +1,21 @@
+// Cloudflare Workers static-assets deploy for iqraramin.com. No Worker
+// script: Cloudflare serves the Astro build in dist/ directly.
+// Build: `pnpm run build` (includes the verify-flags check). Deploy:
+// `npx wrangler deploy`.
+{
+	// Must match the Worker's name in the Cloudflare dashboard, or a
+	// dashboard-connected (Workers Builds) deploy fails.
+	"name": "iqraramin",
+	"compatibility_date": "2026-09-26",
+	"assets": {
+		"directory": "./dist",
+		// Unknown paths get dist/404.html with a real 404 status.
+		"not_found_handling": "404-page",
+		// /about and /about/ both work; the slash form is canonical.
+		"html_handling": "auto-trailing-slash"
+	},
+	// Attaches the domain on deploy; the iqraramin.com zone must be on the
+	// same Cloudflare account. www is not served here (redirect it to the
+	// apex with a Cloudflare redirect rule instead of serving a duplicate).
+	"routes": [{ "pattern": "iqraramin.com", "custom_domain": true }]
+}

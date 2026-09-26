@@ -1,4 +1,4 @@
-# Personal profile website (Astro + GitHub Pages)
+# Personal profile website (Astro + Cloudflare)
 
 ## About
 Muhammad Iqrar Amin (goes by Q): cybersecurity researcher, engineer, and
@@ -8,8 +8,10 @@ long-term professional profile: publications, engineering projects,
 certifications, and blog posts.
 
 ## Goal
-Mostly static, hosted on GitHub Pages at `itzdeadshot.github.io` (custom
-domain later). All content comes from data files (YAML/Markdown/BibTeX) so
+Mostly static, served by Cloudflare Workers static assets at
+`https://iqraramin.com` (`wrangler.jsonc`; `site` in `astro.config.mjs`
+drives canonical URLs, security.txt and robots.txt). A GitHub Pages
+workflow also still exists (`.github/workflows/deploy.yml`). All content comes from data files (YAML/Markdown/BibTeX) so
 the site updates without touching components.
 
 ## Stack and architecture
@@ -18,8 +20,10 @@ the site updates without touching components.
 - TypeScript
 - Astro content collections with Zod schemas (`src/content.config.ts`) for
   every content type, so bad data fails the build
-- Deployment via GitHub Actions using `withastro/action`, deploying to
-  GitHub Pages (`.github/workflows/deploy.yml`)
+- Deployment: Cloudflare Workers static assets via `wrangler.jsonc`
+  (Workers Builds: `pnpm run build`, then `npx wrangler deploy`). The
+  older GitHub Pages workflow (`.github/workflows/deploy.yml`,
+  `withastro/action`) still runs on push too.
 - No third-party trackers, no external font or script CDNs (self-host fonts)
 - Import `z` from `astro/zod`, not `astro:content` (deprecated in Astro 7,
   removed in Astro 8). Use `z.url()` / `z.email()` etc., not the deprecated

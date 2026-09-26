@@ -15,7 +15,7 @@ const readableComments = {
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://itzdeadshot.github.io',
+	site: 'https://iqraramin.com',
 	output: 'static',
 	markdown: {
 		// Blog code blocks. Shiki colors tokens with inline styles (allowed by
