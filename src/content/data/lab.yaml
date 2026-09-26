@@ -1,0 +1,39 @@
+# The home page's "Interactive lab" strip: one card per interactive piece,
+# shown by `order` (the loader itself sorts by id). The federated sandbox
+# is only reachable from here (it is deliberately not in the nav).
+
+- id: federated-sandbox
+  order: 1
+  title: "Federated poisoning sandbox"
+  blurb: "Eight clients train one intrusion detector. Poison one, then see whether robust aggregation catches it."
+  href: "/federated-sandbox/"
+
+- id: evade-detector
+  order: 2
+  title: "Evade my detector"
+  blurb: "Nudge a real flow record past a logistic-regression detector, and compare your path with the minimal one."
+  href: "/research/#evade-detector-title"
+
+- id: packet-dissector
+  order: 3
+  title: "This bio, on the wire"
+  blurb: "My bio as the payload of a real Ethernet, IPv4 and TCP frame, dissected the way Wireshark would."
+  href: "/about/#pd-title"
+
+- id: attack-coverage
+  order: 4
+  title: "ATT&CK coverage"
+  blurb: "My projects and papers mapped onto the MITRE ATT&CK Enterprise matrix."
+  href: "/coverage/"
+
+- id: flags
+  order: 5
+  title: "Capture the flags"
+  blurb: "Six flags hidden around this site, checked in your browser."
+  href: "/flags/"
+
+- id: whoami
+  order: 6
+  title: "You are the traffic"
+  blurb: "An opt-in look at how identifiable your browser is. Nothing leaves your tab."
+  href: "/whoami/"

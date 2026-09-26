@@ -53,7 +53,7 @@ const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 <section class="fl" data-component="fl-sandbox" aria-labelledby="fl-title">
 	<header class="fl-header">
 		<p class="mono eyebrow">Interactive research piece</p>
-		<h2 id="fl-title">{copy.data.title}</h2>
+		<h1 id="fl-title">{copy.data.title}</h1>
 		<p class="fl-intro">{copy.data.intro}</p>
 		<p class="mono toy-note">{copy.data.toyModelNote}</p>
 	</header>
@@ -262,8 +262,12 @@ const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 		gap: var(--space-4);
 	}
 
+	.fl-header h1 {
+		margin-top: 0;
+	}
+
 	.fl-header p,
-	.fl-header h2 {
+	.fl-header h1 {
 		max-width: var(--content-width);
 	}
 

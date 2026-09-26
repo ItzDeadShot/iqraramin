@@ -49,9 +49,22 @@ the site updates without touching components.
 
 ## Pages
 Home, About, Research (publications), Projects (filterable), Blog,
-Certifications, Now, Contact, 404. Built so far: Home (Piece 1 hero),
-About (bio + Piece 3), Research (Piece 2; the publications list itself is
-not built yet), Coverage (Piece 4).
+Certifications, Now, Contact, 404. Built so far: Home, About (bio +
+Piece 3), Research (full publication list from BibTeX + Piece 2),
+Coverage (Piece 4), `/federated-sandbox/` (Piece 1), blog post pages
+(`src/pages/blog/[id].astro`, non-draft posts only; no blog index yet).
+
+Home (`src/pages/index.astro`) is a plain synopsis page, no interactive
+piece on it: hero (name, tagline, `focus` chips from `site.yaml`), then a
+2:1 grid of Recent research (newest 3 publications, via the shared
+`src/components/home/PublicationList.astro`) + Selected projects
+(`featured` projects, `ProjectCard.astro` with the status stamp) beside
+Recently (`news.yaml`) + Latest writing (non-draft posts, or the empty-state
+line from copy), then the Interactive lab cards from `lab.yaml` (ordered by
+its `order` field). Section titles/leads are `home-*` entries in
+`copy.yaml`. `/federated-sandbox/` is deliberately not in the nav; the lab
+cards are its only entry point. Placeholder "TBD" venues are hidden in
+publication listings rather than shown.
 
 ## Design direction
 Chosen and implemented: **Case File** (dossier / redacted-report
@@ -192,7 +205,8 @@ Build order and status:
    console errors. Have not run Lighthouse itself.
    Still has a `TODO(Q):` placeholder for the explainer body text, per the
    copy rules.
-3. **Piece 1, federated poisoning sandbox** - done, Home hero
+3. **Piece 1, federated poisoning sandbox** - done, originally the Home
+   hero, now its own unlisted page `/federated-sandbox/`
    (`src/components/FederatedSandbox.astro`; math in `src/lib/fl/`:
    `sim.ts` local SGD/attacks/rounds, `aggregators.ts`, `pca.ts`,
    `prng.ts`; `worker.ts` runs rounds in a Web Worker; `render.ts` builds

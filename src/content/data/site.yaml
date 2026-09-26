@@ -11,6 +11,12 @@
   # TODO(Q): placeholder, replace with a real security contact (e.g. a
   # mailto: address or a disclosure form) before relying on it.
   securityContact: "https://github.com/ItzDeadShot"
+  # Research areas, shown on the home page.
+  focus:
+    - "Federated learning"
+    - "Intrusion detection systems"
+    - "Deep learning ensembles"
+    - "Explainable AI"
   tagline: >
     Cybersecurity researcher working on federated learning, intrusion
     detection, and explainable AI.

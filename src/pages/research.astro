@@ -1,16 +1,20 @@
 ---
+import { getCollection, getEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import EvadeDetector from '../components/EvadeDetector.astro';
+import PublicationList from '../components/home/PublicationList.astro';
+
+const copy = await getEntry('copy', 'research');
+if (!copy) throw new Error('Missing "research" entry in src/content/data/copy.yaml');
+const publications = (await getCollection('publications')).sort((a, b) => b.data.year - a.data.year);
 ---
 
 <BaseLayout title="Research | Muhammad Iqrar Amin" description="Publications and interactive research pieces from Muhammad Iqrar Amin's work on federated learning, intrusion detection, and explainable AI.">
 	<main class="research-page">
-		<h1>Research</h1>
-		<p>
-			Publications from high-impact, top-quartile venues will be listed here (parsed from a BibTeX
-			file at build time), still to come. In the meantime, this page also hosts a working piece
-			from that research.
-		</p>
+		<h1>{copy.data.title}</h1>
+		<p class="lead">{copy.data.lead}</p>
+		<PublicationList items={publications} />
+		{copy.data.paragraphs.map((p) => <p>{p}</p>)}
 	</main>
 	<EvadeDetector />
 </BaseLayout>
@@ -24,5 +28,9 @@ import EvadeDetector from '../components/EvadeDetector.astro';
 
 	.research-page > * {
 		max-width: var(--content-width);
+	}
+
+	.lead {
+		font-size: 1.15rem;
 	}
 </style>

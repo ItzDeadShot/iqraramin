@@ -1,27 +1,146 @@
 ---
-import { getEntry } from 'astro:content';
+import { getCollection, getEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import FederatedSandbox from '../components/FederatedSandbox.astro';
+import PublicationList from '../components/home/PublicationList.astro';
+import ProjectCard from '../components/home/ProjectCard.astro';
 
-const site = await getEntry('site', 'site');
-if (!site) throw new Error('Missing "site" entry in src/content/data/site.yaml');
+async function need<C extends 'site' | 'copy'>(collection: C, id: string) {
+	const entry = await getEntry(collection, id);
+	if (!entry) throw new Error(`Missing "${id}" entry in src/content/data/${collection}.yaml`);
+	return entry;
+}
+
+const site = await need('site', 'site');
+const [research, projectsCopy, newsCopy, writing, labCopy] = await Promise.all(
+	['home-research', 'home-projects', 'home-news', 'home-writing', 'home-lab'].map((id) => need('copy', id)),
+);
+
+const publications = (await getCollection('publications')).sort((a, b) => b.data.year - a.data.year).slice(0, 3);
+const projects = (await getCollection('projects', (p) => p.data.featured)).sort((a, b) => b.data.year - a.data.year);
+const news = (await getCollection('news')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 4);
+const posts = (await getCollection('blog', (p) => !p.data.draft)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()).slice(0, 3);
+const lab = (await getCollection('lab')).sort((a, b) => a.data.order - b.data.order);
+
+const dateFmt = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', timeZone: 'UTC' });
+const dayFmt = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
 ---
 
 <BaseLayout title={site.data.name} description={site.data.tagline}>
-	<main>
+	<main class="home">
 		<header class="hero">
 			<h1>{site.data.name}</h1>
 			<p class="tagline">{site.data.tagline}</p>
+			{
+				site.data.focus.length > 0 && (
+					<ul class="focus mono" aria-label="Research focus">
+						{site.data.focus.map((f) => (
+							<li>{f}</li>
+						))}
+					</ul>
+				)
+			}
 		</header>
-		<FederatedSandbox />
+
+		<div class="home-grid">
+			<div class="home-main">
+				<section aria-labelledby="home-research-title">
+					<div class="section-head">
+						<h2 id="home-research-title">{research.data.title}</h2>
+						<a href="/research/" class="mono more">All research</a>
+					</div>
+					<p class="section-lead">{research.data.lead}</p>
+					<PublicationList items={publications} />
+				</section>
+
+				<section aria-labelledby="home-projects-title">
+					<div class="section-head">
+						<h2 id="home-projects-title">{projectsCopy.data.title}</h2>
+					</div>
+					<p class="section-lead">{projectsCopy.data.lead}</p>
+					<div class="cases">
+						{projects.map((p) => <ProjectCard project={p} />)}
+					</div>
+				</section>
+			</div>
+
+			<aside class="home-side">
+				<section aria-labelledby="home-news-title">
+					<div class="section-head">
+						<h2 id="home-news-title">{newsCopy.data.title}</h2>
+					</div>
+					<p class="section-lead">{newsCopy.data.lead}</p>
+					<ol class="timeline">
+						{
+							news.map((n) => (
+								<li>
+									<time class="mono" datetime={n.data.date.toISOString().slice(0, 10)}>
+										{dateFmt.format(n.data.date)}
+									</time>
+									<p>{n.data.link ? <a href={n.data.link}>{n.data.text}</a> : n.data.text}</p>
+								</li>
+							))
+						}
+					</ol>
+				</section>
+
+				<section aria-labelledby="home-writing-title">
+					<div class="section-head">
+						<h2 id="home-writing-title">{writing.data.title}</h2>
+					</div>
+					<p class="section-lead">{writing.data.lead}</p>
+					{
+						posts.length > 0 ? (
+							<ol class="posts">
+								{posts.map((post) => (
+									<li>
+										<time class="mono" datetime={post.data.date.toISOString().slice(0, 10)}>
+											{dayFmt.format(post.data.date)}
+										</time>
+										<a href={`/blog/${post.id}/`}>{post.data.title}</a>
+										<p>{post.data.summary}</p>
+									</li>
+								))}
+							</ol>
+						) : (
+							writing.data.paragraphs.map((p) => <p class="empty">{p}</p>)
+						)
+					}
+				</section>
+			</aside>
+		</div>
+
+		<section class="lab" aria-labelledby="home-lab-title">
+			<div class="section-head">
+				<h2 id="home-lab-title">{labCopy.data.title}</h2>
+			</div>
+			<p class="section-lead">{labCopy.data.lead}</p>
+			<ul class="lab-grid">
+				{
+					lab.map((item) => (
+						<li>
+							<a href={item.data.href} class="lab-card">
+								<span class="lab-title">{item.data.title}</span>
+								<span class="lab-blurb">{item.data.blurb}</span>
+								<span class="lab-go mono" aria-hidden="true">
+									Open
+								</span>
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</section>
 	</main>
 </BaseLayout>
 
 <style>
-	.hero {
+	.home {
 		max-width: var(--page-width);
 		margin: 0 auto;
-		padding: var(--space-5) var(--space-3) 0;
+		padding: var(--space-5) var(--space-3);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-6);
 	}
 
 	.hero h1 {
@@ -32,8 +151,179 @@ if (!site) throw new Error('Missing "site" entry in src/content/data/site.yaml')
 
 	.tagline {
 		margin: 0;
-		max-width: 40rem;
+		max-width: var(--content-width);
 		font-size: 1.15rem;
 		color: var(--color-muted);
+	}
+
+	.focus {
+		list-style: none;
+		margin: var(--space-3) 0 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		font-size: 0.8rem;
+	}
+
+	.focus li {
+		padding: 2px var(--space-2);
+		border: 1px solid var(--color-fg);
+	}
+
+	.home-grid {
+		display: grid;
+		grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+		gap: var(--space-5);
+		align-items: start;
+	}
+
+	.home-main,
+	.home-side {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-5);
+	}
+
+	/* Case File section head: a mono label over a heavy rule, like a form
+	   section in a report. */
+	.section-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--space-2);
+		border-bottom: 2px solid var(--color-fg);
+		padding-bottom: var(--space-1);
+	}
+
+	.section-head h2 {
+		margin: 0;
+		font-family: var(--font-mono);
+		font-size: 0.85rem;
+		font-weight: 600;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.more {
+		font-size: 0.8rem;
+	}
+
+	.section-lead {
+		margin: var(--space-2) 0 var(--space-3);
+		color: var(--color-muted);
+		font-size: 0.95rem;
+	}
+
+	.cases {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+		gap: var(--space-3);
+	}
+
+	.timeline,
+	.posts {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.timeline li,
+	.posts li {
+		padding: var(--space-2) 0;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.timeline time,
+	.posts time {
+		display: block;
+		font-size: 0.75rem;
+		color: var(--color-muted);
+	}
+
+	.timeline p,
+	.posts p {
+		margin: var(--space-1) 0 0;
+		font-size: 0.95rem;
+	}
+
+	.posts a {
+		font-weight: 600;
+	}
+
+	.posts p {
+		color: var(--color-muted);
+	}
+
+	.empty {
+		margin: 0;
+		padding-top: var(--space-2);
+		border-top: 1px solid var(--color-border);
+		color: var(--color-muted);
+		font-style: italic;
+	}
+
+	.lab-grid {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+		gap: var(--space-3);
+	}
+
+	.lab-grid li {
+		display: flex;
+	}
+
+	.lab-card {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+		padding: var(--space-3) var(--space-4);
+		border: 1px solid var(--color-border);
+		background: var(--color-surface);
+		color: var(--color-fg);
+		text-decoration: none;
+	}
+
+	.lab-card:hover {
+		border-color: var(--color-fg);
+	}
+
+	.lab-card:hover .lab-title {
+		text-decoration: underline;
+	}
+
+	.lab-title {
+		font-weight: 600;
+		font-size: 1.05rem;
+	}
+
+	.lab-blurb {
+		font-size: 0.9rem;
+		color: var(--color-muted);
+	}
+
+	.lab-go {
+		margin-top: auto;
+		padding-top: var(--space-2);
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+	}
+
+	.lab-go::after {
+		content: ' \2192';
+	}
+
+	@media (max-width: 800px) {
+		.home-grid {
+			grid-template-columns: minmax(0, 1fr);
+		}
 	}
 </style>

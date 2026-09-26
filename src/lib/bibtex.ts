@@ -169,3 +169,15 @@ export function parseAttackField(value: string | undefined, key: string): Attack
 		return { id, relation };
 	});
 }
+
+/** BibTeX "Last, First and Last, First" (or "First Last") to "First Last, First Last". */
+export function formatAuthors(value: string): string {
+	return value
+		.split(/\s+and\s+/)
+		.map((name) => {
+			const [last, first] = name.split(',').map((s) => s.trim());
+			return first ? `${first} ${last}` : last;
+		})
+		.filter(Boolean)
+		.join(', ');
+}

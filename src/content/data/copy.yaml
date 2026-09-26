@@ -88,3 +88,35 @@
   link:
     label: "Test your browser properly with EFF's Cover Your Tracks"
     url: "https://coveryourtracks.eff.org/"
+
+- id: research
+  title: "Research"
+  lead: >
+    Publications on federated learning, intrusion detection, deep learning
+    ensembles and explainable AI, read from a BibTeX file at build time.
+  paragraphs:
+    - "Further down, this page also hosts a working piece from that research."
+
+- id: home-research
+  title: "Recent research"
+  lead: "Selected publications, newest first."
+
+- id: home-projects
+  title: "Selected projects"
+  lead: "Case files from research and engineering work."
+
+- id: home-news
+  title: "Recently"
+  lead: "Short updates."
+
+- id: home-writing
+  title: "Latest writing"
+  lead: "Notes and longer posts."
+  paragraphs:
+    - "Nothing published yet."
+
+- id: home-lab
+  title: "Interactive lab"
+  lead: >
+    Working miniatures of my research: small, real computations you can
+    poke at, all running in your browser.

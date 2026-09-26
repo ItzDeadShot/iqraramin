@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import publicationsBib from '../content/data/publications.bib?raw';
-import { cleanValue, parseAttackField, parseBibtex } from './bibtex';
+import { cleanValue, formatAuthors, parseAttackField, parseBibtex } from './bibtex';
 
 describe('parseBibtex', () => {
 	it('reads braced, quoted and numeric fields, with nested braces', () => {
@@ -57,5 +57,15 @@ describe('parseAttackField', () => {
 
 	it('rejects items without a relation', () => {
 		expect(() => parseAttackField('T1046', 'paper1')).toThrow(/"paper1".*must look like "T1046:detects"/);
+	});
+});
+
+describe('formatAuthors', () => {
+	it('turns "Last, First and Last, First" into readable names', () => {
+		expect(formatAuthors('Amin, Muhammad Iqrar')).toBe('Muhammad Iqrar Amin');
+		expect(formatAuthors('Amin, M. I. and Doe, Jane')).toBe('M. I. Amin, Jane Doe');
+	});
+	it('leaves "First Last" names alone', () => {
+		expect(formatAuthors('Jane Doe and Amin, Q.')).toBe('Jane Doe, Q. Amin');
 	});
 });

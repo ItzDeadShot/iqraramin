@@ -166,6 +166,7 @@ const site = defineCollection({
 		tagline: z.string(),
 		wordmark: z.string().min(1),
 		wordmarkLatin: z.string().min(1),
+		focus: z.array(z.string()).default([]),
 		securityContact: z.string().regex(/^(mailto:|https:\/\/|tel:)/, 'security.txt Contact must be a mailto:, https:// or tel: URI'),
 	}),
 });
@@ -228,4 +229,15 @@ const copy = defineCollection({
 	}),
 });
 
-export const collections = { projects, publications, blog, certifications, talks, news, now, pieces, site, about, flags, copy };
+const lab = defineCollection({
+	loader: file('./src/content/data/lab.yaml'),
+	schema: z.object({
+		id: z.string(),
+		order: z.number().int(),
+		title: z.string(),
+		blurb: z.string(),
+		href: z.string().startsWith('/', 'Lab links must be site-relative paths'),
+	}),
+});
+
+export const collections = { projects, publications, blog, certifications, talks, news, now, pieces, site, about, flags, copy, lab };

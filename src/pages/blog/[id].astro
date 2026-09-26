@@ -1,0 +1,48 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+	const posts = await getCollection('blog', (p) => !p.data.draft);
+	return posts.map((post) => ({ params: { id: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const date = new Intl.DateTimeFormat('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }).format(post.data.date);
+---
+
+<BaseLayout title={`${post.data.title} | Muhammad Iqrar Amin`} description={post.data.summary}>
+	<main class="post">
+		<header>
+			<p class="mono meta">
+				<time datetime={post.data.date.toISOString().slice(0, 10)}>{date}</time>
+				{post.data.tags.length > 0 && <span> · {post.data.tags.join(', ')}</span>}
+			</p>
+			<h1>{post.data.title}</h1>
+		</header>
+		<Content />
+	</main>
+</BaseLayout>
+
+<style>
+	.post {
+		max-width: var(--page-width);
+		margin: 0 auto;
+		padding: var(--space-5) var(--space-3);
+	}
+
+	.post > :global(*) {
+		max-width: var(--content-width);
+	}
+
+	.meta {
+		margin: 0 0 var(--space-2);
+		font-size: 0.8rem;
+		color: var(--color-muted);
+	}
+
+	.post h1 {
+		margin-top: 0;
+	}
+</style>

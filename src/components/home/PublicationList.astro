@@ -1,0 +1,74 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { formatAuthors } from '../../lib/bibtex';
+
+interface Props {
+	items: CollectionEntry<'publications'>[];
+}
+
+const { items } = Astro.props;
+const kind: Record<string, string> = { article: 'Journal article', inproceedings: 'Conference paper' };
+// Placeholder entries carry "... TBD" venues; show nothing rather than that.
+const meta = (p: CollectionEntry<'publications'>) =>
+	[kind[p.data.type] ?? p.data.type, /\bTBD\b/.test(p.data.venue) ? '' : p.data.venue, String(p.data.year)].filter(Boolean).join(' · ');
+---
+
+<ol class="pubs">
+	{
+		items.map((p) => (
+			<li class="pub">
+				<p class="pub-title">{p.data.title}</p>
+				<p class="pub-authors">{formatAuthors(p.data.authors)}</p>
+				<p class="pub-meta mono">{meta(p)}</p>
+				{(p.data.doi || p.data.url) && (
+					<p class="pub-links mono">
+						{p.data.doi && <a href={`https://doi.org/${p.data.doi}`}>DOI</a>}
+						{p.data.url && <a href={p.data.url}>Link</a>}
+					</p>
+				)}
+			</li>
+		))
+	}
+</ol>
+
+<style>
+	.pubs {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.pub {
+		padding: var(--space-3) 0;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.pub p {
+		margin: 0;
+	}
+
+	.pub-title {
+		font-weight: 600;
+		font-size: 1.05rem;
+		line-height: 1.35;
+	}
+
+	.pub-authors {
+		margin-top: var(--space-1) !important;
+		color: var(--color-muted);
+	}
+
+	.pub-meta,
+	.pub-links {
+		margin-top: var(--space-1) !important;
+		font-size: 0.8rem;
+		color: var(--color-muted);
+	}
+
+	.pub-links {
+		display: flex;
+		gap: var(--space-3);
+	}
+</style>

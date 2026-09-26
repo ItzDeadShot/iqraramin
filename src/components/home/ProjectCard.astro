@@ -1,0 +1,125 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+	project: CollectionEntry<'projects'>;
+}
+
+const { data } = Astro.props.project;
+const typeLabel = { research: 'Research', engineering: 'Engineering', tool: 'Tool' }[data.type];
+const links = [
+	data.links.paper && { label: 'Paper', url: data.links.paper },
+	data.links.repo && { label: 'Code', url: data.links.repo },
+	data.links.demo && { label: 'Demo', url: data.links.demo },
+].filter((l): l is { label: string; url: string } => Boolean(l));
+---
+
+<article class="case">
+	<div class="case-top">
+		<span class="stamp mono" data-status={data.status}>{data.status}</span>
+		<span class="case-meta mono">{typeLabel} · {data.year}</span>
+	</div>
+	<h3>{data.title}</h3>
+	<p class="case-summary">{data.summary}</p>
+	{
+		data.tags.length > 0 && (
+			<ul class="case-tags mono">
+				{data.tags.map((t) => (
+					<li>{t}</li>
+				))}
+			</ul>
+		)
+	}
+	{
+		links.length > 0 && (
+			<p class="case-links mono">
+				{links.map((l) => (
+					<a href={l.url}>{l.label}</a>
+				))}
+			</p>
+		)
+	}
+</article>
+
+<style>
+	.case {
+		border: 1px solid var(--color-border);
+		background: var(--color-surface);
+		padding: var(--space-3) var(--space-4);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.case-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+		flex-wrap: wrap;
+	}
+
+	/* The status is a rubber stamp; its word carries the meaning, color only
+	   reinforces it. */
+	.stamp {
+		display: inline-block;
+		padding: 1px var(--space-2);
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		border: 1.5px solid currentColor;
+		transform: rotate(-2deg);
+	}
+
+	.stamp[data-status='active'] {
+		color: var(--color-accent);
+	}
+
+	.stamp[data-status='completed'] {
+		color: var(--color-fg);
+	}
+
+	.stamp[data-status='archived'] {
+		color: var(--color-muted);
+		border-style: dashed;
+	}
+
+	.case-meta {
+		font-size: 0.75rem;
+		color: var(--color-muted);
+	}
+
+	.case h3 {
+		margin: 0;
+		font-size: 1.15rem;
+	}
+
+	.case-summary {
+		margin: 0;
+		font-size: 0.95rem;
+	}
+
+	.case-tags {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1);
+		font-size: 0.75rem;
+	}
+
+	.case-tags li {
+		padding: 0 var(--space-1);
+		border: 1px solid var(--color-border);
+		color: var(--color-muted);
+	}
+
+	.case-links {
+		margin: 0;
+		display: flex;
+		gap: var(--space-3);
+		font-size: 0.8rem;
+	}
+</style>
