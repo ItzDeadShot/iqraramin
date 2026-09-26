@@ -1,5 +1,7 @@
 ---
+import { getEntry } from 'astro:content';
 import '../styles/global.css';
+import wordmarkFont from '../content/data/wordmark-font.json';
 
 export interface Props {
 	title: string;
@@ -7,6 +9,19 @@ export interface Props {
 }
 
 const { title, description = 'Personal site of Muhammad Iqrar Amin (Q).' } = Astro.props;
+
+const site = await getEntry('site', 'site');
+if (!site) throw new Error('Missing "site" entry in src/content/data/site.yaml');
+// The wordmark font is a subset of just these letters; anything outside it
+// would silently fall back to a different font, so refuse to build instead.
+const covered = new Set(wordmarkFont.text);
+const missing = [...new Set(site.data.wordmark)].filter((ch) => !/\s/.test(ch) && !covered.has(ch));
+if (missing.length) {
+	throw new Error(
+		`Wordmark "${site.data.wordmark}" uses characters the subset font doesn't include (${missing.join(' ')}). ` +
+			`Regenerate it: ${wordmarkFont.regenerate}`,
+	);
+}
 
 const csp = [
 	"default-src 'self'",
@@ -30,13 +45,17 @@ const csp = [
 		<meta name="description" content={description} />
 		<link rel="preload" href="/fonts/fraunces-variable.woff2" as="font" type="font/woff2" crossorigin />
 		<link rel="preload" href="/fonts/jetbrains-mono-variable.woff2" as="font" type="font/woff2" crossorigin />
+		<link rel="preload" href={wordmarkFont.file} as="font" type="font/woff2" crossorigin />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
 		<title>{title}</title>
 	</head>
 	<body>
 		<header class="site-header">
-			<a class="wordmark" href="/">Q.</a>
+			<a class="wordmark" href="/">
+				<span class="wordmark-text" lang="ur" dir="rtl">{site.data.wordmark}</span>
+				<span class="visually-hidden"> ({site.data.wordmarkLatin}), home</span>
+			</a>
 			<nav class="site-nav" aria-label="Primary">
 				<a href="/">Home</a>
 				<a href="/about">About</a>
@@ -61,12 +80,21 @@ const csp = [
 		border-bottom: 1px solid var(--color-border);
 	}
 
+	/* Nastaliq has very tall ascenders and deep descenders, so the box is
+	   sized explicitly: the header's height never depends on the font's
+	   metrics, and the font arriving can't shift the page. */
 	.wordmark {
-		font-family: var(--font-display);
-		font-weight: 700;
-		font-size: 1.25rem;
+		display: flex;
+		align-items: center;
+		height: 2.75rem;
 		text-decoration: none;
 		color: var(--color-fg);
+	}
+
+	.wordmark-text {
+		font-family: 'Iqrar Wordmark', var(--font-display);
+		font-size: 1.9rem;
+		line-height: 1;
 	}
 
 	.site-nav {

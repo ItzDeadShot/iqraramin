@@ -1,0 +1,6 @@
+{
+  "text": "اقرار",
+  "file": "/fonts/noto-nastaliq-urdu-wordmark.woff2",
+  "source": "Noto Nastaliq Urdu Bold (Google Fonts, v23), SIL Open Font License 1.1",
+  "regenerate": "pyftsubset NotoNastaliqUrdu-Bold.ttf --text=\"<new wordmark>\" --layout-features='*' --flavor=woff2 --output-file=public/fonts/noto-nastaliq-urdu-wordmark.woff2, then update \"text\" here"
+}

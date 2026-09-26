@@ -1,6 +1,12 @@
 # Site-wide identity copy (home hero, and later the page footer).
 - id: site
   name: "Muhammad Iqrar Amin"
+  # Header wordmark: "Iqrar" in Urdu, set in Nastaliq. The font is a tiny
+  # subset covering only these letters; changing this text means
+  # regenerating it (see src/content/data/wordmark-font.json), and the build
+  # fails with instructions if you forget.
+  wordmark: "اقرار"
+  wordmarkLatin: "Iqrar"
   tagline: >
     Cybersecurity researcher working on federated learning, intrusion
     detection, and explainable AI.

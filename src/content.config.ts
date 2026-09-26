@@ -163,6 +163,8 @@ const site = defineCollection({
 		id: z.string(),
 		name: z.string(),
 		tagline: z.string(),
+		wordmark: z.string().min(1),
+		wordmarkLatin: z.string().min(1),
 	}),
 });
 

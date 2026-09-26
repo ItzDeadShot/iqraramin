@@ -65,7 +65,15 @@ cards), status shown as a rotated bordered "stamp." Light/dark via
 `prefers-color-scheme` plus a `[data-theme]` override hook for a future
 toggle (not built yet). Both self-hosted fonts are OFL-licensed, see
 `public/fonts/LICENSE.md`. Contrast-checked: every text/background pairing
-in both themes clears WCAG AA (4.79:1 to 15.5:1). `BaseLayout.astro` has a
+in both themes clears WCAG AA (4.79:1 to 15.5:1). Header wordmark is
+"Iqrar" in Urdu (اقرار), from `wordmark` in `site.yaml`, set in a ~2.5KB
+subset of Noto Nastaliq Urdu Bold (OFL) that holds only those glyphs
+(`public/fonts/noto-nastaliq-urdu-wordmark.woff2`, `font-display: block`,
+preloaded, fixed-height box so it can't shift layout). The build fails if
+the wordmark uses letters outside the subset, printing the pyftsubset
+command from `src/content/data/wordmark-font.json`. It's real text
+(`lang="ur" dir="rtl"`) with a visually hidden "(Iqrar), home" so the
+accessible name contains the visible word. `BaseLayout.astro` has a
 minimal site nav listing only pages that exist (Home, About, Research,
 Coverage).
 
