@@ -1,6 +1,10 @@
 % Placeholder publication records. Replace fields marked "TBD" with the
 % real venue, volume, pages, and DOI once each paper is published or
-% preprinted. Parsing (via citation-js) is wired up in Phase 2.
+% preprinted.
+%
+% attack = {ID:relation, ...} links a paper to MITRE ATT&CK techniques for
+% the /coverage page; relation is detects, mitigates or studies.
+% TODO(Q): the attack mappings below are placeholders, confirm or replace.
 
 @article{amin2025federated,
   author  = {Amin, Muhammad Iqrar},
@@ -9,7 +13,8 @@
   year    = {2025},
   volume  = {TBD},
   pages   = {TBD},
-  doi     = {TBD}
+  doi     = {TBD},
+  attack  = {T1498:detects, T1046:detects, T1110:detects}
 }
 
 @inproceedings{amin2024explainable,
@@ -17,7 +22,8 @@
   title     = {Explainable Ensemble Deep Learning for Network Intrusion Detection},
   booktitle = {Conference Name TBD},
   year      = {2024},
-  pages     = {TBD}
+  pages     = {TBD},
+  attack    = {T1498:detects, T1595:detects, T1068:studies}
 }
 
 @inproceedings{amin2023ensemble,
@@ -25,5 +31,6 @@
   title     = {A Deep Learning Ensemble Approach to Real-Time Threat Classification},
   booktitle = {Conference Name TBD},
   year      = {2023},
-  pages     = {TBD}
+  pages     = {TBD},
+  attack    = {T1499:detects, T1046:detects}
 }

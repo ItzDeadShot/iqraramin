@@ -6,6 +6,8 @@ year: 2025
 tags: [federated-learning, cryptography, open-source]
 links:
   repo: "https://github.com/ItzDeadShot/placeholder-secagg"
+# No ATT&CK mapping: model-poisoning defenses belong to MITRE ATLAS
+# (adversarial ML), not Enterprise ATT&CK.
 featured: false
 summary: >
   A lightweight library implementing secure aggregation protocols for

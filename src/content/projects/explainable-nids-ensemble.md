@@ -7,6 +7,12 @@ tags: [deep-learning, ensembles, explainable-ai, intrusion-detection]
 links:
   repo: "https://github.com/ItzDeadShot/placeholder-xnids"
   paper: "https://example.com/placeholder-paper-xnids"
+# TODO(Q): placeholder ATT&CK mappings, confirm or replace.
+# relation is one of: detects | mitigates | studies
+attack:
+  - { id: T1498, relation: detects }
+  - { id: T1595, relation: detects }
+  - { id: T1068, relation: studies }
 featured: true
 summary: >
   An ensemble of deep classifiers for network intrusion detection paired with

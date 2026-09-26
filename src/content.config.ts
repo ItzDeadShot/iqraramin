@@ -1,6 +1,26 @@
 import { defineCollection } from 'astro:content';
-import { glob, file } from 'astro/loaders';
+import { glob, file, type Loader } from 'astro/loaders';
 import { z } from 'astro/zod';
+import attackData from './content/data/attack/enterprise.json';
+// Imported as text through Vite (no Node fs, no @types/node); editing the
+// .bib file invalidates this config and re-runs the loader.
+import publicationsBib from './content/data/publications.bib?raw';
+import { cleanValue, parseAttackField, parseBibtex } from './lib/bibtex';
+
+const ATTACK_IDS = new Set([...attackData.techniques.map((t) => t[0] as string), ...attackData.subtechniques.map((s) => s[0])]);
+
+/** A work's claim about an ATT&CK technique. Unknown, revoked or deprecated
+ * IDs fail the build, naming the ID and the pinned ATT&CK version. */
+const attackLink = z.object({
+	id: z
+		.string()
+		.regex(/^T\d{4}(\.\d{3})?$/, 'ATT&CK technique IDs look like T1046 or T1110.001')
+		.refine((id) => ATTACK_IDS.has(id), {
+			error: (issue) =>
+				`Unknown ATT&CK technique "${String(issue.input)}": not an active technique or sub-technique in Enterprise ATT&CK v${attackData.version} (typo, or revoked/deprecated?)`,
+		}),
+	relation: z.enum(['detects', 'mitigates', 'studies']),
+});
 
 const projects = defineCollection({
 	loader: glob({ pattern: '**/*.md', base: './src/content/projects' }),
@@ -19,6 +39,51 @@ const projects = defineCollection({
 			.default({}),
 		featured: z.boolean().default(false),
 		summary: z.string(),
+		attack: z.array(attackLink).default([]),
+	}),
+});
+
+/** Loads publications.bib through the site's own small BibTeX reader
+ * (src/lib/bibtex.ts); every entry is then validated by the schema below. */
+function bibtexLoader(source: string): Loader {
+	return {
+		name: 'bibtex',
+		load: async ({ store, parseData, logger }) => {
+			const entries = parseBibtex(source);
+			store.clear();
+			for (const entry of entries) {
+				const f = entry.fields;
+				const data = await parseData({
+					id: entry.key,
+					data: {
+						type: entry.type,
+						title: cleanValue(f.title ?? ''),
+						authors: cleanValue(f.author ?? ''),
+						year: Number(f.year),
+						venue: cleanValue(f.journal ?? f.booktitle ?? ''),
+						doi: f.doi && f.doi !== 'TBD' ? cleanValue(f.doi) : undefined,
+						url: f.url ? cleanValue(f.url) : undefined,
+						attack: parseAttackField(f.attack, entry.key),
+					},
+				});
+				store.set({ id: entry.key, data });
+			}
+			logger.info(`Loaded ${entries.length} publications from publications.bib`);
+		},
+	};
+}
+
+const publications = defineCollection({
+	loader: bibtexLoader(publicationsBib),
+	schema: z.object({
+		type: z.string(),
+		title: z.string().min(1),
+		authors: z.string(),
+		year: z.number().int().min(1900).max(2100),
+		venue: z.string(),
+		doi: z.string().optional(),
+		url: z.url().optional(),
+		attack: z.array(attackLink).default([]),
 	}),
 });
 
@@ -134,4 +199,4 @@ const about = defineCollection({
 	}),
 });
 
-export const collections = { projects, blog, certifications, talks, news, now, pieces, site, about };
+export const collections = { projects, publications, blog, certifications, talks, news, now, pieces, site, about };

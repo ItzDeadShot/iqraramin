@@ -6,6 +6,12 @@ year: 2025
 tags: [federated-learning, intrusion-detection, privacy]
 links:
   paper: "https://example.com/placeholder-paper-federated-ids"
+# TODO(Q): placeholder ATT&CK mappings, confirm or replace.
+# relation is one of: detects | mitigates | studies
+attack:
+  - { id: T1498, relation: detects }
+  - { id: T1046, relation: detects }
+  - { id: T1110, relation: detects }
 featured: true
 summary: >
   A robust aggregation scheme for training intrusion detection models across

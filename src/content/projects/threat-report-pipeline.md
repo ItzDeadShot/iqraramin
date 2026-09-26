@@ -6,6 +6,10 @@ year: 2023
 tags: [automation, threat-intel, python]
 links:
   repo: "https://github.com/ItzDeadShot/placeholder-threat-pipeline"
+# TODO(Q): placeholder ATT&CK mappings, confirm or replace.
+# relation is one of: detects | mitigates | studies
+attack:
+  - { id: T1566, relation: studies }
 featured: false
 summary: >
   A pipeline that ingested open-source threat feeds, deduplicated indicators,
