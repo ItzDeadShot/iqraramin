@@ -17,8 +17,12 @@ import EvadeDetector from '../components/EvadeDetector.astro';
 
 <style>
 	.research-page {
-		max-width: var(--content-width);
+		max-width: var(--page-width);
 		margin: 0 auto;
 		padding: var(--space-5) var(--space-3) 0;
+	}
+
+	.research-page > * {
+		max-width: var(--content-width);
 	}
 </style>

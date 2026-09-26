@@ -65,7 +65,12 @@ cards), status shown as a rotated bordered "stamp." Light/dark via
 `prefers-color-scheme` plus a `[data-theme]` override hook for a future
 toggle (not built yet). Both self-hosted fonts are OFL-licensed, see
 `public/fonts/LICENSE.md`. Contrast-checked: every text/background pairing
-in both themes clears WCAG AA (4.79:1 to 15.5:1). Header wordmark is
+in both themes clears WCAG AA (4.79:1 to 15.5:1). Layout: one page frame,
+`--page-width` (68rem), shared by the header and every page's outer
+container so their edges line up exactly (checked at 390/1280/1600px);
+running text inside is capped at `--content-width` (46rem) for reading
+measure. Use `--page-width` for any new page container, never a one-off
+width. Header wordmark is
 "Iqrar" in Urdu (اقرار), from `wordmark` in `site.yaml`, set in a ~2.5KB
 subset of Noto Nastaliq Urdu Bold (OFL) that holds only those glyphs
 (`public/fonts/noto-nastaliq-urdu-wordmark.woff2`, `font-display: block`,

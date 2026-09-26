@@ -55,6 +55,10 @@
 	--space-5: 2.5rem;
 	--space-6: 4rem;
 
+	/* One page frame for the whole site: the header and every page's outer
+	   container share it so their edges line up. --content-width is the
+	   narrower reading measure for running text inside that frame. */
+	--page-width: 68rem;
 	--content-width: 46rem;
 
 	color-scheme: light;
