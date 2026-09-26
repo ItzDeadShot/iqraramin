@@ -17,5 +17,13 @@
 	// Attaches the domain on deploy; the iqraramin.com zone must be on the
 	// same Cloudflare account. www is not served here (redirect it to the
 	// apex with a Cloudflare redirect rule instead of serving a duplicate).
-	"routes": [{ "pattern": "iqraramin.com", "custom_domain": true }]
+	"routes": [{ "pattern": "iqraramin.com", "custom_domain": true }],
+	// Workers Logs, kept in the Cloudflare dashboard.
+	"observability": {
+		"logs": {
+			"enabled": true,
+			"invocation_logs": true,
+			"persist": true
+		}
+	}
 }
