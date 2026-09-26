@@ -111,7 +111,7 @@ const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 
 	<div class="fl-layout">
 		<div class="fl-panel">
-			<h3 class="fl-panel-title mono">Clients and server</h3>
+			<h2 class="fl-panel-title mono">Clients and server</h2>
 			<div class="fl-ring">
 				<svg data-ring viewBox={`0 0 ${RING.size} ${RING.size}`} aria-hidden="true" set:html={ringMarkup} />
 				{
@@ -138,14 +138,14 @@ const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 					})
 				}
 			</div>
-			<h3 class="fl-panel-title mono">Attackers</h3>
+			<h2 class="fl-panel-title mono">Attackers</h2>
 			<ul class="fl-attackers" data-attackers>
 				<li class="attacker attacker--empty">No attackers. Select a client on the ring to make it malicious.</li>
 			</ul>
 		</div>
 
 		<div class="fl-panel">
-			<h3 class="fl-panel-title mono">Client updates this round, 2D projection (PCA)</h3>
+			<h2 class="fl-panel-title mono">Client updates this round, 2D projection (PCA)</h2>
 			<ul class="fl-legend mono" aria-hidden="true">
 				<li><svg viewBox="0 0 12 12"><circle class="fl-key-honest" cx="6" cy="6" r="4.5" /></svg>honest</li>
 				<li><svg viewBox="0 0 12 12"><rect class="fl-key-attacker" x="1.5" y="1.5" width="9" height="9" /></svg>attacker</li>
@@ -165,7 +165,7 @@ const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 				<div class="fl-tip mono" data-scatter-tip hidden></div>
 			</div>
 
-			<h3 class="fl-panel-title mono">Global model on the held-out test set</h3>
+			<h2 class="fl-panel-title mono">Global model on the held-out test set</h2>
 			<ul class="fl-legend mono" aria-hidden="true">
 				<li><svg viewBox="0 0 20 12"><line class="fl-key-accuracy" x1="1" y1="6" x2="19" y2="6" /></svg>accuracy</li>
 				<li><svg viewBox="0 0 20 12"><line class="fl-key-miss" x1="1" y1="6" x2="19" y2="6" /></svg>attacks missed</li>
@@ -223,7 +223,7 @@ const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 	</details>
 
 	<div class="explainer">
-		<h3>{copy.data.explainerTitle}</h3>
+		<h2 class="fl-explainer-title">{copy.data.explainerTitle}</h2>
 		<p>{copy.data.explainerBody}</p>
 	</div>
 
@@ -414,6 +414,11 @@ const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 		flex-direction: column;
 		gap: var(--space-2);
 		min-width: 0;
+	}
+
+	/* h2s under the page's h1; sized as before, when they were h3s. */
+	.fl-explainer-title {
+		font-size: 1.17rem;
 	}
 
 	.fl-panel-title {
