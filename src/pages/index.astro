@@ -98,7 +98,6 @@ const dayFmt = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short
 											{dayFmt.format(post.data.date)}
 										</time>
 										<a href={`/blog/${post.id}/`}>{post.data.title}</a>
-										<p>{post.data.summary}</p>
 									</li>
 								))}
 							</ol>
@@ -244,18 +243,15 @@ const dayFmt = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short
 		color: var(--color-muted);
 	}
 
-	.timeline p,
-	.posts p {
+	.timeline p {
 		margin: var(--space-1) 0 0;
 		font-size: 0.95rem;
 	}
 
 	.posts a {
+		display: block;
+		margin-top: var(--space-1);
 		font-weight: 600;
-	}
-
-	.posts p {
-		color: var(--color-muted);
 	}
 
 	.empty {
