@@ -267,8 +267,11 @@ Build order and status:
    printed in the cell; relation = D/M/S letter badges with solid / double
    / dashed borders (never color alone). Default view shows covered
    techniques only; "Show the full matrix" is a visually hidden checkbox
-   driving CSS `:has()`, so it works without JS (full view scrolls
-   sideways). Filters by relation and work type (projects' research /
+   driving CSS `:has()`, so it works without JS. The full view scrolls
+   inside a fixed-height box (`min(70vh, 44rem)`) in both directions with
+   sticky tactic headers, so the horizontal scrollbar is always on screen
+   (changed after review: it used to scroll the whole page sideways at the
+   bottom of a ~250-row matrix). Filters by relation and work type (projects' research /
    engineering / tool, plus publication) re-count cells, the summary, the
    detail panel and the table. Detail panel lists each work with type,
    year, relation and its links (projects have no pages yet, so it links

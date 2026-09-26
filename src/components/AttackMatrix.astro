@@ -127,7 +127,9 @@ const tableRows = [...coveredCells.values()]
 	</ul>
 
 	<div class="cov-body">
-		<div class="cov-scroll" tabindex="0" role="region" aria-label="ATT&CK matrix (scrolls sideways in the full view)">
+		<div class="cov-matrix-area">
+		<p class="cov-scroll-hint mono">Scroll inside the box to move around the matrix; Shift + wheel scrolls sideways.</p>
+		<div class="cov-scroll" tabindex="0" role="region" aria-label="ATT&CK matrix (in the full view, scrolls inside this box in both directions)">
 			<div class="cov-matrix">
 				{
 					matrix.map((col) => {
@@ -177,6 +179,8 @@ const tableRows = [...coveredCells.values()]
 					})
 				}
 			</div>
+		</div>
+
 		</div>
 
 		<aside class="cov-detail" id="cov-detail" aria-live="polite" data-detail>
@@ -415,9 +419,42 @@ const tableRows = [...coveredCells.values()]
 		align-items: start;
 	}
 
+	.cov-matrix-area {
+		min-width: 0;
+	}
+
 	.cov-scroll {
 		overflow-x: auto;
 		min-width: 0;
+	}
+
+	.cov-scroll-hint {
+		display: none;
+		margin: 0 0 var(--space-2);
+		font-size: 0.75rem;
+		color: var(--color-muted);
+	}
+
+	/* Full view: the matrix scrolls inside a fixed-height box in both
+	   directions, so the horizontal scrollbar is always on screen instead of
+	   at the bottom of a ~250-row page. Tactic headers stick to the box's top. */
+	.cov:has(.cov-full-toggle:checked) .cov-scroll-hint {
+		display: block;
+	}
+
+	.cov:has(.cov-full-toggle:checked) .cov-scroll {
+		max-height: min(70vh, 44rem);
+		overflow: auto;
+		border: 1px solid var(--color-border);
+		padding: 0 var(--space-2) var(--space-2);
+	}
+
+	.cov:has(.cov-full-toggle:checked) .cov-col-head {
+		position: sticky;
+		top: 0;
+		z-index: 1;
+		background: var(--color-bg);
+		padding-top: var(--space-2);
 	}
 
 	.cov-matrix {
