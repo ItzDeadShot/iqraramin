@@ -438,6 +438,8 @@ API is down. "Last updated" dates from git history.
 
 ## Working agreements
 - Keep commits small and meaningful.
+- Commits are authored by Q alone: no `Co-Authored-By` or other AI
+  attribution lines in commit messages or PR descriptions.
 - Ask before adding any new dependency beyond the core stack (Astro,
   TypeScript, Zod via astro/zod). `@astrojs/check` + `typescript` devDeps
   were added in Phase 1 for `astro check`/editor tooling. `vitest` was

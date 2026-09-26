@@ -5,7 +5,7 @@
  * (BibTeX's own rule, so the % lines at the top are fine). @comment and
  * @preamble blocks are skipped. It deliberately rejects @string macros and
  * # concatenation with a clear error rather than half-supporting them.
- * Citation formatting is a separate job (see CLAUDE.md, citation-js).
+ * Citation formatting is a separate job (see AGENTS.md, citation-js).
  */
 
 export interface BibEntry {
