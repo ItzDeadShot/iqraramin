@@ -1,0 +1,379 @@
+---
+import { getEntry } from 'astro:content';
+import { FONT_CANDIDATES, SIGNAL_INFO, SOURCES, flowRecord, type Signals } from '../lib/whoami/signals';
+
+const copy = await getEntry('copy', 'whoami');
+const tips = await getEntry('copy', 'whoami-tips');
+if (!copy || !tips) throw new Error('Missing "whoami" / "whoami-tips" entries in src/content/data/copy.yaml');
+// Keep the promise in the copy honest if the font list changes.
+if (!copy.data.paragraphs.some((p) => p.includes(`${FONT_CANDIDATES.length} common fonts`))) {
+	throw new Error(`whoami copy must say "${FONT_CANDIDATES.length} common fonts" to match FONT_CANDIDATES`);
+}
+
+// A made-up example so the page shows what it does before (or without)
+// reading anything. Clearly labelled as not the visitor.
+const example: Signals = {
+	userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+	clientHints: 'Google Chrome 140, Chromium 140; Windows 15.0.0; x86 64-bit; desktop',
+	languages: ['en-GB', 'en'],
+	timezone: 'Europe/London',
+	utcOffsetMinutes: 60,
+	screen: { width: 1920, height: 1080, colorDepth: 24, pixelRatio: 1.25 },
+	colorScheme: 'light',
+	cpuThreads: 8,
+	canvasHash: '3f6c1a9e0b27d4c85e1f0a7b62c9d340e8a15b7c2f9d06e4a3b8c1f5d7e2a901',
+	canvasRandomized: false,
+	fontsDetected: ['Arial', 'Calibri', 'Cambria', 'Consolas', 'Georgia', 'Segoe UI', 'Verdana'],
+	fontsChecked: FONT_CANDIDATES.length,
+};
+const rows = flowRecord(example);
+const infoByKey = new Map(SIGNAL_INFO.map((s) => [s.key, s]));
+---
+
+<section class="who" data-component="whoami" aria-labelledby="who-title">
+	<header class="who-header">
+		<p class="mono eyebrow">Interactive piece</p>
+		<h1 id="who-title">{copy.data.title}</h1>
+		<p class="who-lead">{copy.data.lead}</p>
+	</header>
+
+	<div class="who-consent">
+		<p class="mono who-consent-label">Before you press it</p>
+		{copy.data.paragraphs.map((p) => <p>{p}</p>)}
+		<div class="who-actions">
+			<button type="button" class="who-btn who-btn--primary" data-inspect data-requires-js disabled>Inspect my traffic</button>
+			<button type="button" class="who-btn" data-forget hidden>Forget this</button>
+		</div>
+		<p class="who-status" data-status aria-live="polite">This needs JavaScript, and everything happens inside this tab.</p>
+	</div>
+
+	<div class="who-record">
+		<p class="who-record-header mono">
+			<span data-record-header>FLOW 0000  example record  verdict=?</span>
+			<span class="who-example-tag" data-example-tag>Example, not you</span>
+		</p>
+		<div class="who-table-scroll">
+			<table class="who-table">
+				<thead>
+					<tr>
+						<th scope="col">Field</th>
+						<th scope="col">Value</th>
+						<th scope="col">Typical identifying power</th>
+					</tr>
+				</thead>
+				<tbody>
+					{
+						rows.map((row) => {
+							const info = infoByKey.get(row.signal)!;
+							const src = info.source ? SOURCES[info.source] : null;
+							return (
+								<tr>
+									<th scope="row" class="mono">
+										{row.field}
+									</th>
+									<td class="mono who-value" data-value-for={row.signal}>
+										{row.value}
+									</td>
+									<td class="who-power">
+										<strong class="mono">{info.bits === null ? 'n/a' : `~${info.bits} bits`}</strong> {info.note}
+										{src && (
+											<>
+												{' '}
+												<a href={src.url} class="who-cite">
+													({info.source === 'eckersley' ? 'Eckersley 2010' : 'Laperdrix et al. 2016'})
+												</a>
+											</>
+										)}
+									</td>
+								</tr>
+							);
+						})
+					}
+				</tbody>
+			</table>
+		</div>
+
+		<div class="who-verdict" data-verdict hidden>
+			<p class="who-verdict-stamp mono">Verdict: benign</p>
+			<ul data-verdict-reasons></ul>
+		</div>
+
+		<div class="who-estimate" data-estimate>
+			<p>
+				After you press the button, this box gives an approximate sense of how identifying your values are. The figures in the
+				table are population averages from published studies, not a measurement of you: this site keeps no data to compare
+				anyone against.
+			</p>
+		</div>
+	</div>
+
+	<section class="who-tips" aria-labelledby="who-tips-title">
+		<h2 id="who-tips-title">{tips.data.title}</h2>
+		<p>{tips.data.lead}</p>
+		<ul>
+			{tips.data.paragraphs.map((p) => <li>{p}</li>)}
+		</ul>
+		{tips.data.link && (
+			<p class="who-tips-link">
+				<a href={tips.data.link.url}>{tips.data.link.label}</a>
+			</p>
+		)}
+	</section>
+
+	<p class="who-sources mono">
+		Sources: <a href={SOURCES.eckersley.url}>{SOURCES.eckersley.label}</a> (470,161 browsers);{' '}
+		<a href={SOURCES.amiunique.url}>{SOURCES.amiunique.label}</a> (118,934 fingerprints).
+	</p>
+</section>
+
+<script>
+	import { initWhoAmI } from '../lib/whoami/whoami-client';
+
+	const root = document.querySelector<HTMLElement>('[data-component="whoami"]');
+	if (root) initWhoAmI(root);
+</script>
+
+<style>
+	.who {
+		max-width: 64rem;
+		margin: 0 auto;
+		padding: var(--space-5) var(--space-3);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.who-header > * {
+		max-width: var(--content-width);
+	}
+
+	.who-header h1 {
+		margin-top: 0;
+	}
+
+	.eyebrow {
+		color: var(--color-accent);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		font-size: 0.75rem;
+		margin: 0 0 var(--space-2);
+	}
+
+	.who-lead {
+		font-size: 1.15rem;
+	}
+
+	.who-consent {
+		max-width: var(--content-width);
+		border: 1.5px dashed var(--color-fg);
+		background: var(--color-surface);
+		padding: var(--space-3) var(--space-4);
+	}
+
+	.who-consent-label {
+		margin: 0;
+		font-size: 0.75rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.who-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		margin-top: var(--space-3);
+	}
+
+	.who-btn {
+		font-family: var(--font-mono);
+		font-size: 0.85rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		min-height: 2.75rem;
+		padding: var(--space-2) var(--space-4);
+		color: var(--color-fg);
+		background: transparent;
+		border: 1.5px solid var(--color-fg);
+		cursor: pointer;
+	}
+
+	.who-btn--primary {
+		background: var(--color-fg);
+		color: var(--color-bg);
+	}
+
+	.who-btn:disabled {
+		opacity: 0.5;
+		cursor: default;
+	}
+
+	.who-status {
+		margin: var(--space-2) 0 0;
+		min-height: 1.6em;
+		font-size: 0.9rem;
+	}
+
+	.who-record {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	.who-record-header {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+		margin: 0;
+		padding: var(--space-2) var(--space-3);
+		background: var(--color-fg);
+		color: var(--color-bg);
+		font-size: 0.8rem;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+
+	.who-example-tag {
+		padding: 0 var(--space-2);
+		border: 1.5px solid var(--color-bg);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		font-size: 0.75rem;
+	}
+
+	.who-table-scroll {
+		overflow-x: auto;
+	}
+
+	.who-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.85rem;
+	}
+
+	.who-table th,
+	.who-table td {
+		text-align: left;
+		vertical-align: top;
+		padding: var(--space-2) var(--space-3) var(--space-2) 0;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.who-table thead th {
+		font-family: var(--font-mono);
+		font-weight: 500;
+		font-size: 0.75rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.who-table tbody th {
+		font-weight: 500;
+		white-space: nowrap;
+	}
+
+	.who-value {
+		overflow-wrap: anywhere;
+		min-width: 14rem;
+		color: var(--color-muted);
+	}
+
+	.who-value:global(.is-live) {
+		color: var(--color-fg);
+		font-weight: 500;
+	}
+
+	.who-power {
+		min-width: 14rem;
+		color: var(--color-fg);
+	}
+
+	.who-cite {
+		font-size: 0.8rem;
+	}
+
+	.who-verdict {
+		border: 1px solid var(--color-border);
+		padding: var(--space-3) var(--space-4);
+	}
+
+	.who-verdict-stamp {
+		display: inline-block;
+		margin: 0 0 var(--space-2);
+		padding: var(--space-1) var(--space-2);
+		border: 2px solid var(--color-fg);
+		font-weight: 600;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		transform: rotate(-1.5deg);
+	}
+
+	.who-verdict ul {
+		margin: 0;
+		padding-left: 1.2rem;
+	}
+
+	.who-estimate {
+		max-width: var(--content-width);
+		font-size: 0.95rem;
+	}
+
+	.who-estimate :global(p) {
+		margin: 0 0 var(--space-2);
+	}
+
+	.who-tips {
+		max-width: var(--content-width);
+		border-top: 1px solid var(--color-border);
+		padding-top: var(--space-3);
+	}
+
+	.who-tips ul {
+		padding-left: 1.2rem;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.who-sources {
+		margin: 0;
+		font-size: 0.8rem;
+		color: var(--color-muted);
+		border-top: 1px solid var(--color-border);
+		padding-top: var(--space-2);
+	}
+
+	@media (max-width: 640px) {
+		.who-table thead {
+			display: none;
+		}
+
+		.who-table,
+		.who-table tbody,
+		.who-table tr,
+		.who-table th,
+		.who-table td {
+			display: block;
+			width: 100%;
+		}
+
+		.who-table tr {
+			border-bottom: 1px solid var(--color-border);
+			padding: var(--space-2) 0;
+		}
+
+		.who-table th,
+		.who-table td {
+			border: 0;
+			padding: 2px 0;
+		}
+
+		.who-value,
+		.who-power {
+			min-width: 0;
+		}
+	}
+</style>

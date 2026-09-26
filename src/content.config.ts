@@ -224,6 +224,7 @@ const copy = defineCollection({
 		title: z.string(),
 		lead: z.string(),
 		paragraphs: z.array(z.string()).default([]),
+		link: z.object({ label: z.string(), url: z.url() }).optional(),
 	}),
 });
 

@@ -41,3 +41,50 @@
     request, not a lock, and it tells humans exactly where to look.
   paragraphs:
     - "Which is why nothing secret should ever be listed there."
+
+- id: whoami
+  title: "You are the traffic"
+  lead: >
+    Every page you load hands the server a small description of your
+    browser. Press the button to see the part this page can read, laid out
+    the way an analyst would see a flow record.
+  paragraphs:
+    - >
+      When you press it, this page reads your user agent and UA client
+      hints, languages, time zone, screen size and pixel ratio, color
+      scheme, CPU thread count, a hash of how your browser draws a small
+      test image (canvas), and which of 28 common fonts are installed.
+      Nothing is read before you press it.
+    - >
+      All of it stays in this tab. Nothing is sent anywhere and nothing is
+      stored, and it is wiped when you leave. You can check: after the page
+      has loaded, your browser's developer tools show no further network
+      requests and nothing written to storage, even after you press the
+      button.
+
+- id: whoami-tips
+  title: "How to reduce this"
+  lead: >
+    You can't disappear from fingerprinting entirely. The practical goal is
+    to look like as many other people as possible.
+  paragraphs:
+    - >
+      Use a browser with fingerprinting protection switched on: Firefox
+      with Enhanced Tracking Protection set to Strict, Brave, or Mullvad
+      Browser. For the strongest protection, Tor Browser makes its users
+      look alike on purpose.
+    - >
+      Prefer common settings over clever ones. A rare mix of extensions,
+      languages or tweaks can make you stand out more, not less.
+    - >
+      Keep your browser updated. Old versions get rarer, and rarer is more
+      identifying.
+    - >
+      Think twice before installing unusual fonts system-wide; each one is
+      another signal.
+    - >
+      Private windows clear cookies, not your fingerprint. They help against
+      being linked over time, not against being recognized.
+  link:
+    label: "Test your browser properly with EFF's Cover Your Tracks"
+    url: "https://coveryourtracks.eff.org/"
